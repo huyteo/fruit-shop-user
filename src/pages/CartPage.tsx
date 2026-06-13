@@ -19,10 +19,10 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/useCart';
 import { useAuth } from '../contexts/useAuth';
+import { getImageUrl } from '../utils/image';
 
 const { Title, Text } = Typography;
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -224,7 +224,7 @@ export default function CartPage() {
                   >
                     {item.thumbnail ? (
                       <img
-                        src={`${API_URL}${item.thumbnail}`}
+                        src={getImageUrl(item.thumbnail)}
                         alt={item.name}
                         style={{
                           width: '100%',

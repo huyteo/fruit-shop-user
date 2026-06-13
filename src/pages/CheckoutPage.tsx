@@ -18,10 +18,10 @@ import axiosClient from '../api/axiosClient';
 import { useCart } from '../contexts/useCart';
 import { useAuth } from '../contexts/useAuth';
 import type { CartItem } from '../contexts/CartContext';
+import { getImageUrl } from '../utils/image';
 
 const { Title, Text } = Typography;
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
@@ -287,7 +287,7 @@ export default function CheckoutPage() {
                 >
                   {item.thumbnail ? (
                     <Image
-                      src={`${API_URL}${item.thumbnail}`}
+                      src={getImageUrl(item.thumbnail)}
                       width={50}
                       height={50}
                       style={{ objectFit: 'cover', borderRadius: 8 }}

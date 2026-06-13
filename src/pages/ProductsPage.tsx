@@ -10,6 +10,7 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useCart } from '../contexts/useCart';
+import { getImageUrl } from '../utils/image';
 
 interface Product {
   id: number;
@@ -29,8 +30,6 @@ interface Category {
   id: number;
   name: string;
 }
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -414,7 +413,7 @@ export default function ProductsPage() {
                   >
                     {product.thumbnail ? (
                       <img
-                        src={`${API_URL}${product.thumbnail}`}
+                        src={getImageUrl(product.thumbnail)}
                         alt={product.name}
                         style={{
                           width: '100%',
@@ -608,7 +607,7 @@ export default function ProductsPage() {
                   >
                     {product.thumbnail ? (
                       <img
-                        src={`${API_URL}${product.thumbnail}`}
+                        src={getImageUrl(product.thumbnail)}
                         alt={product.name}
                         style={{
                           width: '100%',

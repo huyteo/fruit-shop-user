@@ -21,6 +21,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useCart } from '../contexts/useCart';
 import { useAuth } from '../contexts/useAuth';
+import { getImageUrl } from '../utils/image';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -49,7 +50,6 @@ interface Review {
   user: { id: number; name: string; avatar: string };
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -207,7 +207,7 @@ export default function ProductDetailPage() {
               }}
             >
               <img
-                src={selectedImage ? `${API_URL}${selectedImage}` : undefined}
+                src={selectedImage ? getImageUrl(selectedImage) : undefined}
                 alt={product.name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
@@ -243,7 +243,7 @@ export default function ProductDetailPage() {
                     }}
                   >
                     <img
-                      src={`${API_URL}${img}`}
+                      src={getImageUrl(img)}
                       alt={`Ảnh ${index + 1}`}
                       style={{
                         width: '100%',
@@ -721,7 +721,7 @@ export default function ProductDetailPage() {
                   <div style={{ position: 'relative' }}>
                     {rp.thumbnail ? (
                       <img
-                        src={`${API_URL}${rp.thumbnail}`}
+                        src={getImageUrl(rp.thumbnail)}
                         alt={rp.name}
                         style={{
                           width: '100%',

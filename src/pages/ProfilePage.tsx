@@ -13,6 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useAuth } from '../contexts/useAuth';
+import { getImageUrl } from '../utils/image';
 
 interface UserProfile {
   id: number;
@@ -28,7 +29,6 @@ interface UserProfile {
 interface District { name: string; wards: string[]; }
 interface Province { name: string; districts: District[]; }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const vietnamData: Province[] = [
   {
     name: 'TP. Hồ Chí Minh',
@@ -271,7 +271,7 @@ export default function ProfilePage() {
                 border: '3px solid rgba(255,255,255,0.4)', background: '#e8e8e8',
               }}>
                 {avatarUrl ? (
-                  <img src={`${API_URL}${avatarUrl}`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={getImageUrl(avatarUrl)} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)', fontSize: 40 }}>👤</div>
                 )}

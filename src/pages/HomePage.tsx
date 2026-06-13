@@ -23,6 +23,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useCart } from '../contexts/useCart';
+import { getImageUrl } from '../utils/image';
 
 interface Category {
   id: number;
@@ -60,8 +61,6 @@ interface ReviewStats {
   total: number;
   distribution: { '5': number; '4': number; '3': number; '1-2': number };
 }
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const slides = [
   {
@@ -603,7 +602,7 @@ export default function HomePage() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, border: '2px solid #c8e6c9', overflow: 'hidden' }}>
                     {t.avatar ? (
-                      <img src={`${API_URL}${t.avatar}`} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={getImageUrl(t.avatar)} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : '👤'}
                   </div>
                   <div style={{ flex: 1 }}>
@@ -705,7 +704,7 @@ function ProductCard({ product, onNavigate, onAddToCart }: { product: Product; o
     >
       <div onClick={onNavigate} style={{ position: 'relative', overflow: 'hidden' }}>
         {product.thumbnail ? (
-          <img src={`${API_URL}${product.thumbnail}`} alt={product.name} style={{ width: '100%', height: 260, objectFit: 'cover', transition: 'transform 0.4s' }}
+          <img src={getImageUrl(product.thumbnail)} alt={product.name} style={{ width: '100%', height: 260, objectFit: 'cover', transition: 'transform 0.4s' }}
             onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
             onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
           />
