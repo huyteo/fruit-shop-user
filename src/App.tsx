@@ -83,9 +83,11 @@ function AppRoutes() {
   );
 }
 
+const FONT = "'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
 export default function App() {
   return (
-    <ConfigProvider locale={viVN}>
+    <ConfigProvider locale={viVN} theme={{ token: { fontFamily: FONT } }}>
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>

@@ -3,26 +3,32 @@ import {
   Button,
   Typography,
   Popconfirm,
-  Checkbox,
   message,
 } from 'antd';
 import {
   DeleteOutlined,
   ShoppingOutlined,
   ArrowLeftOutlined,
+  ArrowRightOutlined,
   MinusOutlined,
   PlusOutlined,
-  SafetyCertificateOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  FileTextOutlined,
   CarOutlined,
+  SafetyCertificateOutlined,
   GiftOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/useCart';
 import { useAuth } from '../contexts/useAuth';
 import { getImageUrl } from '../utils/image';
+import '../styles/CartPage.css';
 
 const { Title, Text } = Typography;
 
+const FREE_SHIP_THRESHOLD = 200000;
+const SHIPPING_FEE = 25000;
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, clearCart } = useCart();
@@ -49,11 +55,19 @@ export default function CartPage() {
     }
   };
 
-  const selectedTotal = items
-    .filter((item) => selectedIds.includes(item.productId))
-    .reduce((sum, item) => sum + item.price * item.quantity, 0);
-
+  const selectedItems = items.filter((item) =>
+    selectedIds.includes(item.productId),
+  );
+  const selectedTotal = selectedItems.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const selectedCount = selectedIds.length;
+
+  const freeShip = selectedTotal >= FREE_SHIP_THRESHOLD;
+  const shippingFee = freeShip ? 0 : SHIPPING_FEE;
+  const grandTotal = selectedTotal + (selectedCount > 0 ? shippingFee : 0);
+  const progressPct = Math.min((selectedTotal / FREE_SHIP_THRESHOLD) * 100, 100);
 
   const handleCheckout = () => {
     if (selectedCount === 0) {
@@ -64,9 +78,6 @@ export default function CartPage() {
       navigate('/login');
       return;
     }
-    const selectedItems = items.filter((item) =>
-      selectedIds.includes(item.productId),
-    );
     localStorage.setItem('checkoutItems', JSON.stringify(selectedItems));
     navigate('/checkout');
   };
@@ -78,15 +89,8 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div
-        style={{
-          textAlign: 'center',
-          padding: '80px 20px',
-          maxWidth: 500,
-          margin: '0 auto',
-        }}
-      >
-        <div style={{ fontSize: 64, marginBottom: 16 }}>🛒</div>
+      <div className="cart-empty">
+        <div className="cart-empty-icon">🛒</div>
         <Title level={3} style={{ color: '#333', marginBottom: 8 }}>
           Giỏ hàng trống
         </Title>
@@ -98,13 +102,7 @@ export default function CartPage() {
           icon={<ShoppingOutlined />}
           size="large"
           onClick={() => navigate('/products')}
-          style={{
-            background: '#00a63e',
-            borderColor: '#00a63e',
-            borderRadius: 8,
-            height: 48,
-            fontWeight: 600,
-          }}
+          className="cart-empty-btn"
         >
           Khám phá sản phẩm
         </Button>
@@ -113,44 +111,31 @@ export default function CartPage() {
   }
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 24,
-        }}
-      >
+    <div className="cart-page">
+      {/* ===== HEADER (giữ nguyên) ===== */}
+      <div className="cart-header">
         <Title level={3} style={{ margin: 0 }}>
           🛒 Giỏ hàng
-          <span style={{ color: '#999', fontSize: 16, fontWeight: 400, marginLeft: 8 }}>
+          <span className="cart-header-count">
             ({items.length} sản phẩm)
           </span>
         </Title>
       </div>
 
-      <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              padding: '14px 20px',
-              background: '#f0f7ff',
-              borderRadius: '12px 12px 0 0',
-              border: '1.5px solid #f0f7ff',
-              borderBottom: 'none',
-              gap: 14,
-            }}
-          >
-            <Checkbox
-              checked={isAllSelected}
-              onChange={toggleSelectAll}
-              style={{ transform: 'scale(1.15)' }}
-            />
-            <Text strong style={{ flex: 1, fontSize: 14, color: '#333' }}>
-              Chọn tất cả ({items.length})
+      <div className="cart-layout">
+        <div className="cart-main">
+          {/* ===== Select all ===== */}
+          <div className="cart-selectall">
+            <span
+              className={`cart-cb${isAllSelected ? ' cart-cb--on' : ''}`}
+              onClick={toggleSelectAll}
+            >
+              <CheckOutlined />
+            </span>
+            <Text className="cart-selectall-label">
+              {isAllSelected
+                ? 'Bỏ chọn tất cả'
+                : `Chọn tất cả (${items.length})`}
             </Text>
             {selectedCount > 0 && (
               <Popconfirm
@@ -159,259 +144,138 @@ export default function CartPage() {
                 okText="Xóa"
                 cancelText="Hủy"
               >
-                <Button
-                  danger
-                  size="small"
-                  icon={<DeleteOutlined />}
-                  style={{ borderRadius: 6 }}
-                >
-                  Xóa đã chọn
-                </Button>
+                <span className="cart-del-selected">
+                  <DeleteOutlined /> Xóa ({selectedCount})
+                </span>
               </Popconfirm>
             )}
           </div>
 
-          <div
-            style={{
-              border: '1.5px solid #e8e8e8',
-              borderTop: '1.5px solid #e5e7e9',
-              borderRadius: '0 0 12px 12px',
-              overflow: 'hidden',
-              background: '#fff',
-            }}
-          >
-            {items.map((item, index) => {
+          {/* ===== Items ===== */}
+          <div className="cart-list">
+            {items.map((item) => {
               const isSelected = selectedIds.includes(item.productId);
+              const canDecrease = item.quantity > 1;
+              const canIncrease = item.quantity < item.stock;
               return (
                 <div
                   key={item.productId}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '20px',
-                    gap: 16,
-                    borderBottom:
-                      index < items.length - 1
-                        ? '1px solid #f0f0f0'
-                        : 'none',
-                    background: isSelected ? '#f0f7ff' : '#fff',
-                    transition: 'all 0.25s ease',
-                    cursor: 'pointer',
-                  }}
+                  className={`cart-item${isSelected ? ' cart-item--selected' : ''}`}
                   onClick={() => toggleSelect(item.productId)}
                 >
-                  <Checkbox
-                    checked={isSelected}
-                    onChange={() => toggleSelect(item.productId)}
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ transform: 'scale(1.15)' }}
-                  />
+                  {isSelected && <div className="cart-item-strip" />}
 
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/products/${item.productId}`);
-                    }}
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 10,
-                      overflow: 'hidden',
-                      border: '1px solid #f0f0f0',
-                      flexShrink: 0,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {item.thumbnail ? (
-                      <img
-                        src={getImageUrl(item.thumbnail)}
-                        alt={item.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          background: '#f0f7ff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 32,
-                        }}
-                      >
-                        🍊
-                      </div>
-                    )}
-                  </div>
+                  <div className="cart-item-inner">
+                    <span
+                      className={`cart-cb${isSelected ? ' cart-cb--on' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(item.productId);
+                      }}
+                    >
+                      <CheckOutlined />
+                    </span>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div
+                      className="cart-item-thumb"
                       onClick={(e) => {
                         e.stopPropagation();
                         navigate(`/products/${item.productId}`);
                       }}
-                      style={{
-                        fontWeight: 600,
-                        fontSize: 15,
-                        color: '#333',
-                        marginBottom: 6,
-                        cursor: 'pointer',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
                     >
-                      {item.name}
+                      {item.thumbnail ? (
+                        <img src={getImageUrl(item.thumbnail)} alt={item.name} />
+                      ) : (
+                        <div className="cart-item-thumb-placeholder">🍊</div>
+                      )}
+                      <div className="cart-item-gloss" />
                     </div>
-                    <div>
-                      <span style={{ color: '#e04949', fontWeight: 600, fontSize: 15 }}>
+
+                    <div className="cart-item-body">
+                      <div className="cart-item-name-row">
+                        <span
+                          className="cart-item-name"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/products/${item.productId}`);
+                          }}
+                        >
+                          {item.name}
+                        </span>
+                        <Popconfirm
+                          title="Xóa sản phẩm này?"
+                          onConfirm={() => {
+                            removeFromCart(item.productId);
+                            setSelectedIds((prev) =>
+                              prev.filter((id) => id !== item.productId),
+                            );
+                          }}
+                          okText="Xóa"
+                          cancelText="Hủy"
+                        >
+                          <button
+                            className="cart-item-remove"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </Popconfirm>
+                      </div>
+
+                      <span className="cart-price-pill">
                         {Number(item.price).toLocaleString('vi-VN')}đ
+                        <span className="cart-price-pill-unit"> /{item.unit}</span>
                       </span>
-                      <span style={{ color: '#bbb', fontSize: 13, marginLeft: 2 }}>
-                        /{item.unit}
-                      </span>
+
+                      <div className="cart-qty-row">
+                        <div
+                          className="cart-qty"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            className="cart-qty-btn"
+                            disabled={!canDecrease}
+                            onClick={() =>
+                              updateQuantity(
+                                item.productId,
+                                Math.max(1, item.quantity - 1),
+                              )
+                            }
+                          >
+                            <MinusOutlined />
+                          </button>
+                          <div className="cart-qty-value">{item.quantity}</div>
+                          <button
+                            className="cart-qty-btn"
+                            disabled={!canIncrease}
+                            onClick={() =>
+                              updateQuantity(
+                                item.productId,
+                                Math.min(item.stock, item.quantity + 1),
+                              )
+                            }
+                          >
+                            <PlusOutlined />
+                          </button>
+                        </div>
+
+                        <span className="cart-item-subtotal">
+                          {(item.price * item.quantity).toLocaleString('vi-VN')}đ
+                        </span>
+                      </div>
                     </div>
                   </div>
-
-                  <div
-                    onClick={(e) => e.stopPropagation()}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      border: '1.5px solid #e0e0e0',
-                      borderRadius: 8,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.productId,
-                          Math.max(1, item.quantity - 1),
-                        )
-                      }
-                      style={{
-                        width: 34,
-                        height: 34,
-                        border: 'none',
-                        background: '#fafafa',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
-                        color: '#666',
-                      }}
-                    >
-                      <MinusOutlined />
-                    </button>
-                    <div
-                      style={{
-                        width: 42,
-                        height: 34,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 600,
-                        fontSize: 14,
-                        borderLeft: '1.5px solid #e0e0e0',
-                        borderRight: '1.5px solid #e0e0e0',
-                      }}
-                    >
-                      {item.quantity}
-                    </div>
-                    <button
-                      onClick={() =>
-                        updateQuantity(
-                          item.productId,
-                          Math.min(item.stock, item.quantity + 1),
-                        )
-                      }
-                      style={{
-                        width: 34,
-                        height: 34,
-                        border: 'none',
-                        background: '#fafafa',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
-                        color: '#666',
-                      }}
-                    >
-                      <PlusOutlined />
-                    </button>
-                  </div>
-
-                  <div
-                    style={{
-                      width: 120,
-                      textAlign: 'right',
-                      fontWeight: 700,
-                      color: '#e04949',
-                      fontSize: 16,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {(item.price * item.quantity).toLocaleString('vi-VN')}đ
-                  </div>
-
-                  <Popconfirm
-                    title="Xóa sản phẩm này?"
-                    onConfirm={() => {
-                      removeFromCart(item.productId);
-                      setSelectedIds((prev) =>
-                        prev.filter((id) => id !== item.productId),
-                      );
-                    }}
-                    okText="Xóa"
-                    cancelText="Hủy"
-                  >
-                    <button
-                      onClick={(e) => e.stopPropagation()}
-                      style={{
-                        width: 32,
-                        height: 32,
-                        border: 'none',
-                        background: 'transparent',
-                        color: '#ccc',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: 6,
-                        transition: 'all 0.2s',
-                        fontSize: 15,
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = '#ff4d4f';
-                        e.currentTarget.style.background = '#fff2f0';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = '#ccc';
-                        e.currentTarget.style.background = 'transparent';
-                      }}
-                    >
-                      <DeleteOutlined />
-                    </button>
-                  </Popconfirm>
                 </div>
               );
             })}
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 14 }}>
+          {/* ===== Actions ===== */}
+          <div className="cart-actions">
             <Button
               icon={<ArrowLeftOutlined />}
               onClick={() => navigate('/products')}
-              style={{ borderRadius: 6 }}
+              className="cart-btn-rounded"
             >
               Tiếp tục mua sắm
             </Button>
@@ -424,200 +288,182 @@ export default function CartPage() {
               okText="Xóa hết"
               cancelText="Hủy"
             >
-              <Button style={{ borderRadius: 6 }}>
+              <Button className="cart-btn-rounded">
                 Xóa toàn bộ giỏ hàng
               </Button>
             </Popconfirm>
           </div>
         </div>
 
-        <div style={{ width: 340, flexShrink: 0, position: 'sticky', top: 88 }}>
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: 12,
-              border: '1.5px solid #e8e8e8',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                padding: '16px 20px',
-                background: '#f0f7ff',
-                borderBottom: '1.5px solid #e8e8e8',
-              }}
-            >
-              <div style={{ fontWeight: 700, fontSize: 16, color: '#333' }}>
-                Tóm tắt đơn hàng
+        {/* ===== Sidebar ===== */}
+        <div className="cart-sidebar">
+          {/* Free ship progress */}
+          {selectedCount > 0 && !freeShip && (
+            <div className="cart-freeship">
+              <div className="cart-freeship-top">
+                <div className="cart-freeship-icon">🚚</div>
+                <div className="cart-freeship-msg">
+                  Mua thêm{' '}
+                  <span className="cart-freeship-hl">
+                    {(FREE_SHIP_THRESHOLD - selectedTotal).toLocaleString('vi-VN')}đ
+                  </span>{' '}
+                  để miễn phí ship!
+                </div>
+              </div>
+              <div className="cart-progress-track">
+                <div
+                  className="cart-progress-fill"
+                  style={{ width: `${progressPct}%` }}
+                />
+                <div
+                  className="cart-progress-dot"
+                  style={{ left: `${progressPct}%` }}
+                />
+              </div>
+              <div className="cart-progress-labels">
+                <span className="cart-progress-label">0đ</span>
+                <span className="cart-progress-label cart-progress-label--end">
+                  200.000đ
+                </span>
               </div>
             </div>
+          )}
 
-            <div style={{ padding: '20px' }}>
-              {selectedCount > 0 ? (
-                <>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: 12,
-                      fontSize: 14,
-                    }}
-                  >
-                    <Text style={{ color: '#888' }}>Đã chọn:</Text>
-                    <Text strong>{selectedCount} sản phẩm</Text>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: 12,
-                      fontSize: 14,
-                    }}
-                  >
-                    <Text style={{ color: '#888' }}>Tạm tính:</Text>
-                    <Text>{selectedTotal.toLocaleString('vi-VN')}đ</Text>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      marginBottom: 12,
-                      fontSize: 14,
-                    }}
-                  >
-                    <Text style={{ color: '#888' }}>Phí vận chuyển:</Text>
-                    <Text style={{ color: '#00a63e', fontWeight: 600 }}>
-                      Miễn phí
-                    </Text>
-                  </div>
-
-                  <div
-                    style={{
-                      height: 1,
-                      background: '#f0f0f0',
-                      margin: '16px 0',
-                    }}
-                  />
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginBottom: 20,
-                    }}
-                  >
-                    <Text style={{ fontSize: 15, fontWeight: 600 }}>
-                      Tổng cộng:
-                    </Text>
-                    <Text
-                      style={{
-                        fontSize: 22,
-                        fontWeight: 800,
-                        color: '#e04949',
-                      }}
-                    >
-                      {selectedTotal.toLocaleString('vi-VN')}đ
-                    </Text>
-                  </div>
-                </>
-              ) : (
-                <div
-                  style={{
-                    textAlign: 'center',
-                    padding: '20px 0',
-                  }}
-                >
-                  <div style={{ fontSize: 32, marginBottom: 8 }}>👆</div>
-                  <Text style={{ color: '#999', fontSize: 14 }}>
-                    Hãy chọn sản phẩm mà bạn muốn mua
-                  </Text>
-                </div>
-              )}
-
-              <button
-                onClick={handleCheckout}
-                disabled={selectedCount === 0}
-                style={{
-                  width: '100%',
-                  padding: '14px 0',
-                  background:
-                    selectedCount > 0
-                      ? 'linear-gradient(135deg, #e04949 0%, #c0392b 100%)'
-                      : '#e0e0e0',
-                  color: selectedCount > 0 ? '#fff' : '#999',
-                  border: 'none',
-                  borderRadius: 10,
-                  fontSize: 16,
-                  fontWeight: 700,
-                  cursor: selectedCount > 0 ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  if (selectedCount > 0) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow =
-                      '0 6px 20px rgba(224,73,73,0.3)';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                {!isAuthenticated
-                  ? 'Đăng nhập để đặt hàng'
-                  : selectedCount > 0
-                    ? `Đặt hàng (${selectedCount} sản phẩm)`
-                    : 'Chọn sản phẩm để đặt hàng'}
-              </button>
+          {selectedCount > 0 && freeShip && (
+            <div className="cart-freeship-won">
+              <div className="cart-freeship-won-inner">
+                <span style={{ fontSize: 20 }}>🎉</span>
+                <span className="cart-freeship-won-txt">
+                  Bạn được miễn phí vận chuyển!
+                </span>
+                <span className="cart-freeship-won-check">
+                  <CheckOutlined />
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div
-            style={{
-              marginTop: 16,
-              background: '#fff',
-              borderRadius: 12,
-              border: '1.5px solid #e8e8e8',
-              padding: '16px 20px',
-            }}
-          >
+          {/* Summary */}
+          <div className="cart-summary">
+            <div className="cart-summary-head">
+              <div className="cart-summary-head-icon">
+                <FileTextOutlined />
+              </div>
+              <div className="cart-summary-title">Chi tiết đơn hàng</div>
+            </div>
+
+            <div className="cart-summary-dotted" />
+
+            {selectedCount > 0 ? (
+              <>
+                <div className="cart-summary-rows">
+                  <div className="cart-summary-row">
+                    <span className="cart-summary-label">
+                      Tạm tính ({selectedItems.reduce((s, i) => s + i.quantity, 0)} sp)
+                    </span>
+                    <span className="cart-summary-val">
+                      {selectedTotal.toLocaleString('vi-VN')}đ
+                    </span>
+                  </div>
+                  <div className="cart-summary-row">
+                    <span className="cart-summary-label">
+                      Phí vận chuyển
+                      {freeShip && <span className="cart-free-pill">FREE</span>}
+                    </span>
+                    <span
+                      className={`cart-summary-val${freeShip ? ' cart-summary-val--free' : ''}`}
+                    >
+                      {freeShip
+                        ? 'Miễn phí'
+                        : `+${shippingFee.toLocaleString('vi-VN')}đ`}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="cart-total-block">
+                  <div className="cart-total-row">
+                    <div>
+                      <div className="cart-total-label">Tổng cộng</div>
+                      <div className="cart-total-vat">Đã bao gồm VAT</div>
+                    </div>
+                    <div className="cart-total-val">
+                      {grandTotal.toLocaleString('vi-VN')}đ
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ padding: 16 }}>
+                  <button
+                    onClick={handleCheckout}
+                    className="cart-checkout-btn cart-checkout-btn--active"
+                  >
+                    {!isAuthenticated
+                      ? 'Đăng nhập để đặt hàng'
+                      : `Đặt hàng (${selectedCount} sản phẩm)`}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="cart-summary-empty">
+                <div className="cart-summary-empty-icon">👆</div>
+                <Text className="cart-summary-empty-text">
+                  Hãy chọn sản phẩm mà bạn muốn mua
+                </Text>
+              </div> 
+            )}
+          </div>
+           <div className="cart-trust">
             {[
-              {
-                icon: <CarOutlined style={{ color: '#00a63e', fontSize: 16 }} />,
-                text: 'Giao hàng miễn phí',
-              },
-              {
-                icon: <SafetyCertificateOutlined style={{ color: '#00a63e', fontSize: 16 }} />,
-                text: 'Đổi trả trong 24 giờ',
-              },
-              {
-                icon: <GiftOutlined style={{ color: '#00a63e', fontSize: 16 }} />,
-                text: 'Ưu đãi cho thành viên',
-              },
-            ].map((badge, i) => (
+              { icon: <CarOutlined />, text: 'Giao hàng miễn phí' },
+              { icon: <SafetyCertificateOutlined />, text: 'Đổi trả trong 24 giờ' },
+              { icon: <GiftOutlined />, text: 'Ưu đãi cho thành viên' },
+            ].map((b, i) => (
               <div
                 key={i}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '8px 0',
-                  borderBottom:
-                    i < 2 ? '1px solid #f5f5f5' : 'none',
-                }}
+                className={`cart-trust-row${i < 2 ? ' cart-trust-divider' : ''}`}
               >
-                {badge.icon}
-                <span style={{ fontSize: 13, color: '#666' }}>
-                  {badge.text}
-                </span>
+                <span className="cart-trust-icon">{b.icon}</span>
+                <span className="cart-trust-text">{b.text}</span>
               </div>
             ))}
           </div>
         </div>
+      </div>
+
+      {/* ===== Thanh đặt hàng cố định (chỉ hiện trên mobile) ===== */}
+      <div className="cart-mobile-bar">
+        <div className="cart-mobile-bar-info">
+          {selectedCount > 0 ? (
+            <>
+              <div className="cart-mobile-bar-hint">
+                {selectedCount} sản phẩm đã chọn
+              </div>
+              <div className="cart-mobile-bar-total">
+                {grandTotal.toLocaleString('vi-VN')}đ
+              </div>
+            </>
+          ) : (
+            <span className="cart-mobile-bar-placeholder">
+              Chọn sản phẩm để mua
+            </span>
+          )}
+        </div>
+        <button
+          onClick={handleCheckout}
+          disabled={selectedCount === 0}
+          className={`cart-mobile-bar-btn ${
+            selectedCount > 0
+              ? 'cart-checkout-btn--active'
+              : 'cart-checkout-btn--disabled'
+          }`}
+        >
+          {!isAuthenticated
+            ? 'Đăng nhập'
+            : selectedCount > 0
+              ? `Đặt hàng (${selectedCount})`
+              : 'Đặt hàng'}
+          {selectedCount > 0 && <ArrowRightOutlined />}
+        </button>
       </div>
     </div>
   );

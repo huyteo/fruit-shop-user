@@ -1,16 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Spin, Empty, Slider, message } from 'antd';
+import { useState, useEffect, useRef } from 'react';
+import {
+  Spin, Empty, Slider, message, Breadcrumb, Tag, Tooltip,
+  Badge, Pagination, ConfigProvider, Modal
+} from 'antd';
 import {
   AppstoreOutlined,
   UnorderedListOutlined,
   ShoppingCartOutlined,
   FilterOutlined,
   StarFilled,
+  HomeOutlined,
+  DownOutlined,
+  CheckOutlined,
 } from '@ant-design/icons';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useCart } from '../contexts/useCart';
 import { getImageUrl } from '../utils/image';
+import '../styles/ProductsPage.css';
+import { useAuth } from '../contexts/useAuth';
 
 interface Product {
   id: number;
@@ -31,26 +39,59 @@ interface Category {
   name: string;
 }
 
+const ACCENT   = 'rgb(249 174 91)';
+const BRAND    = '#00a63e';
+const PAGE_SIZE = 12;
+
+const SORT_OPTIONS = [
+  { value: 'featured',   label: 'Nổi bật' },
+  { value: 'price_asc',  label: 'Giá tăng dần' },
+  { value: 'price_desc', label: 'Giá giảm dần' },
+  { value: 'name',       label: 'Tên A-Z' },
+];
+
+function ProductRating({ rating, reviews }: { rating: number; reviews: number }) {
+  const rounded = Math.round(rating);
+  return (
+    <div className="pp-rating">
+      <span className="pp-rating-stars">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <StarFilled key={i} className={`pp-star${i <= rounded ? ' pp-star--filled' : ''}`} />
+        ))}
+      </span>
+      <span className="pp-rating-count">({reviews})</span>
+    </div>
+  );
+}
+
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [sortBy, setSortBy] = useState('featured');
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
+  const [products,         setProducts]         = useState<Product[]>([]);
+  const [categories,       setCategories]       = useState<Category[]>([]);
+  const [loading,          setLoading]          = useState(true);
+  const [viewMode,         setViewMode]         = useState<'grid' | 'list'>('grid');
+  const [sortBy,           setSortBy]           = useState('featured');
+  const [priceRange,       setPriceRange]       = useState<[number, number]>([0, 500000]);
+  const [filterPopupOpen,  setFilterPopupOpen]  = useState(false);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [currentPage,      setCurrentPage]      = useState(1);
+
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const navigate   = useNavigate();
   const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const gridRef    = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
 
   const categoryFilter = searchParams.get('category');
-  const searchKeyword = searchParams.get('search') || '';
+  const searchKeyword  = searchParams.get('search') || '';
 
+  /* ── Data fetching ── */
   useEffect(() => {
     axiosClient.get('/categories').then((res) => setCategories(res.data));
   }, []);
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetch = async () => {
       setLoading(true);
       try {
         let response;
@@ -62,44 +103,46 @@ export default function ProductsPage() {
           response = await axiosClient.get('/products');
         }
         setProducts(response.data);
-      } catch (error) {
-        console.error(error);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProducts();
+    fetch();
   }, [categoryFilter, searchKeyword]);
 
+  /* ── Reset page when filters / sort change ── */
+  const priceMin = priceRange[0];
+  const priceMax = priceRange[1];
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [categoryFilter, searchKeyword, sortBy, priceMin, priceMax]);
+
+  /* ── Handlers ── */
   const handleQuickAdd = (e: React.MouseEvent, product: Product) => {
     e.stopPropagation();
-    if (product.stock <= 0) {
-      message.warning('Sản phẩm đã hết hàng');
+
+    if (!isAuthenticated) {
+      Modal.confirm({
+        title: 'Bạn cần đăng nhập',
+        content: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.',
+        okText: 'Đăng nhập',
+        cancelText: 'Để sau',
+        okButtonProps: { style: { background: '#00a63e', borderColor: '#00a63e' } },
+        onOk: () => navigate('/login'),
+      });
       return;
     }
+
+    if (product.stock <= 0) { message.warning('Sản phẩm đã hết hàng'); return; }
     addToCart({
-      productId: product.id,
-      name: product.name,
-      price: Number(product.price),
-      thumbnail: product.thumbnail,
-      unit: product.unit,
-      quantity: 1,
-      stock: product.stock,
+      productId: product.id, name: product.name,
+      price: Number(product.price), thumbnail: product.thumbnail,
+      unit: product.unit, quantity: 1, stock: product.stock,
     });
     message.success(`Đã thêm "${product.name}" vào giỏ hàng`);
   };
-
-  const filteredProducts = products
-    .filter((p) => {
-      const price = Number(p.price);
-      return price >= priceRange[0] && price <= priceRange[1];
-    })
-    .sort((a, b) => {
-      if (sortBy === 'price_asc') return Number(a.price) - Number(b.price);
-      if (sortBy === 'price_desc') return Number(b.price) - Number(a.price);
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      return 0;
-    });
 
   const handleCategoryClick = (catId: number | null) => {
     if (catId) {
@@ -113,645 +156,375 @@ export default function ProductsPage() {
     setSearchParams({});
     setPriceRange([0, 500000]);
     setSortBy('featured');
+    setCurrentPage(1);
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    setTimeout(() => gridRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  };
 
-  return (
-    <div
-      style={{
-        maxWidth: 1600,
-        margin: '0 auto',
-        padding: '28px 32px',
-        display: 'flex',
-        gap: 24,
-        alignItems: 'flex-start',
-      }}
-    >
-      <div
-        style={{
-          width: 280,
-          flexShrink: 0,
-          background: '#fff',
-          borderRadius: 14,
-          padding: '20px 18px',
-          border: '1.5px solid #e8e8e8',
-          position: 'sticky',
-          top: 88,
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            marginBottom: 20,
-          }}
-        >
-          <FilterOutlined style={{ fontSize: 18, color: '#333' }} />
-          <span style={{ fontSize: 18, fontWeight: 650, color: '#333' }}>
-            Bộ lọc
-          </span>
-        </div>
+  /* ── Derived data ── */
+  const filteredProducts = products
+    .filter((p) => { const price = Number(p.price); return price >= priceRange[0] && price <= priceRange[1]; })
+    .sort((a, b) => {
+      if (sortBy === 'price_asc')  return Number(a.price) - Number(b.price);
+      if (sortBy === 'price_desc') return Number(b.price) - Number(a.price);
+      if (sortBy === 'name')       return a.name.localeCompare(b.name);
+      return 0;
+    });
 
-        <div style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              fontSize: 17,
-              fontWeight: 600,
-              color: '#333',
-              marginBottom: 12,
-              borderBottom: '2px solid #e8e8e8',
-              paddingBottom: 8,
-            }}
-          >
-            Danh mục
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <button
-              onClick={() => handleCategoryClick(null)}
-              style={{
-                padding: '9px 14px',
-                borderRadius: 8,
-                border: 'none',
-                background: !categoryFilter ? '#00a63e' : 'transparent',
-                color: !categoryFilter ? '#f3f3f3' : '#656161',
-                fontSize: 15,
-                fontWeight: !categoryFilter ? 550 : 600,
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.2s',
-              }}
-            >
-              Tất cả
-            </button>
-            {categories.map((cat) => (
+  const pagedProducts = filteredProducts.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  const categoryCounts = products.reduce<Record<number, number>>((acc, p) => {
+    if (p.category?.id) acc[p.category.id] = (acc[p.category.id] || 0) + 1;
+    return acc;
+  }, {});
+
+  const categoryName      = categoryFilter ? categories.find((c) => String(c.id) === categoryFilter)?.name : null;
+  const isPriceFiltered   = priceRange[0] > 0 || priceRange[1] < 500000;
+  const activeFilterCount = (categoryFilter ? 1 : 0) + (isPriceFiltered ? 1 : 0);
+  const currentSortLabel  = SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Nổi bật';
+
+  /* ── Hero images ── */
+  const heroImages = products.filter((p) => p.thumbnail).slice(0, 4);
+
+  /* ── Filter popup content ── */
+  const categoryList = [
+    { id: null as number | null, name: 'Tất cả', count: products.length },
+    ...categories.map((c) => ({ id: c.id as number | null, name: c.name, count: categoryCounts[c.id] ?? 0 })),
+  ];
+
+  const FilterContent = (
+    <div className="pp-fc-grid">
+      {/* Column 1: Category */}
+      <div>
+        <div className="pp-fc-col-header">Danh mục</div>
+        <div className="pp-fc-cat-list">
+          {categoryList.map((item) => {
+            const isActive = item.id === null ? !categoryFilter : categoryFilter === String(item.id);
+            return (
               <button
-                key={cat.id}
-                onClick={() => handleCategoryClick(cat.id)}
-                style={{
-                  padding: '9px 14px',
-                  borderRadius: 8,
-                  border: 'none',
-                  background:
-                    categoryFilter === String(cat.id)
-                      ? '#00a63e'
-                      : 'transparent',
-                  color:
-                    categoryFilter === String(cat.id) ? '#f3f3f3' : '#656161',
-                  fontSize: 14,
-                  fontWeight:
-                    categoryFilter === String(cat.id) ? 550 : 600,
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  if (categoryFilter !== String(cat.id))
-                    e.currentTarget.style.background = '#f0f0f0';
-                }}
-                onMouseLeave={(e) => {
-                  if (categoryFilter !== String(cat.id))
-                    e.currentTarget.style.background = 'transparent';
-                }}
+                key={item.id ?? 'all'}
+                onClick={() => handleCategoryClick(item.id)}
+                className={`pp-fc-cat-btn${isActive ? ' pp-fc-cat-btn--active' : ''}`}
               >
-                {cat.name}
+                <span>{item.name}</span>
+                <span className={`pp-fc-cat-count${isActive ? ' pp-fc-cat-count--active' : ''}`}>
+                  {item.count}
+                </span>
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
-
-        <div style={{ marginBottom: 24 }}>
-          <div
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: '#333',
-              marginBottom: 12,
-              borderBottom: '2px solid #e8e8e8',
-              paddingBottom: 8,
-            }}
-          >
-            Khoảng giá
-          </div>
-          <Slider
-            range
-            min={0}
-            max={500000}
-            step={10000}
-            value={priceRange}
-            onChange={(val) => setPriceRange(val as [number, number])}
-            trackStyle={[{ backgroundColor: '#00a63e', height: 5 }]}
-            railStyle={{ height: 5 }}
-            handleStyle={[
-              { borderColor: '#00a63e', width: 16, height: 16 },
-              { borderColor: '#00a63e', width: 16, height: 16 },
-            ]}
-          />
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 13,
-              color: '#888',
-              marginTop: 6,
-            }}
-          >
-            <span>{priceRange[0].toLocaleString('vi-VN')} đ</span>
-            <span>{priceRange[1].toLocaleString('vi-VN')} đ</span>
-          </div>
-        </div>
-
-        <button
-          onClick={handleResetFilter}
-          style={{
-            width: '100%',
-            padding: '10px 0',
-            borderRadius: 8,
-            border: '1.5px solid #e0e0e0',
-            background: '#fff',
-            color: '#555',
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#00a63e';
-            e.currentTarget.style.color = '#00a63e';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#e0e0e0';
-            e.currentTarget.style.color = '#555';
-          }}
-        >
-          Đặt lại bộ lọc
-        </button>
       </div>
 
-      <div style={{ flex: 1 }}>
-        <div
-          style={{
-            background: '#fff',
-            borderRadius: 14,
-            border: '1.5px solid #e8e8e8',
-            padding: '14px 22px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: 20,
+      {/* Column 2: Price range */}
+      <div>
+        <div className="pp-fc-col-header">Khoảng giá</div>
+        <div className="pp-fc-price-display">
+          <span className="pp-fc-price-text">{priceRange[0].toLocaleString('vi-VN')} đ</span>
+          <span className="pp-fc-price-sep">—</span>
+          <span className="pp-fc-price-text">{priceRange[1].toLocaleString('vi-VN')} đ</span>
+        </div>
+        <Slider
+          range min={0} max={500000} step={10000}
+          value={priceRange}
+          onChange={(val) => setPriceRange(val as [number, number])}
+          styles={{
+            track:  { backgroundColor: BRAND, height: 5 },
+            rail:   { height: 5 },
+            handle: { borderColor: BRAND, width: 16, height: 16 },
           }}
-        >
-          <div style={{ display: 'flex', gap: 4 }}>
-            <button
-              onClick={() => setViewMode('grid')}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                border: '1.5px solid',
-                borderColor: viewMode === 'grid' ? '#00a63e' : '#e0e0e0',
-                background: viewMode === 'grid' ? '#f6ffed' : '#fff',
-                color: viewMode === 'grid' ? '#00a63e' : '#999',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 18,
-              }}
-            >
-              <AppstoreOutlined />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 10,
-                border: '1.5px solid',
-                borderColor: viewMode === 'list' ? '#00a63e' : '#e0e0e0',
-                background: viewMode === 'list' ? '#f6ffed' : '#fff',
-                color: viewMode === 'list' ? '#00a63e' : '#999',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 18,
-              }}
-            >
-              <UnorderedListOutlined />
-            </button>
-          </div>
+        />
+      </div>
+    </div>
+  );
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 14, color: '#888' }}>Sắp xếp:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: 8,
-                border: '1.5px solid #e0e0e0',
-                fontSize: 14,
-                color: '#333',
-                cursor: 'pointer',
-                outline: 'none',
-                minWidth: 150,
-              }}
-            >
-              <option value="featured">Nổi bật</option>
-              <option value="price_asc">Giá tăng dần</option>
-              <option value="price_desc">Giá giảm dần</option>
-              <option value="name">Tên A-Z</option>
-            </select>
-          </div>
+  return (
+    <div className="pp-page">
+      <div className="pp-inner">
+
+        {/* ── Breadcrumb ── */}
+        <div className="pp-breadcrumb-wrap">
+          <Breadcrumb
+            items={[
+              { title: <Link to="/" className="pp-breadcrumb-link"><HomeOutlined /> Trang chủ</Link> },
+              { title: <span className="pp-breadcrumb-current">Sản phẩm</span> },
+            ]}
+          />
         </div>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 80 }}>
-            <Spin size="large" />
+        {/* ── Hero Banner ── */}
+        <div className="pp-hero">
+          <div className="pp-hero-content">
+            <div className="pp-hero-label">Cửa hàng trái cây tươi</div>
+            <h1 className="pp-hero-title">Trái cây tươi mỗi ngày 🌿</h1>
+            <p className="pp-hero-sub">Tươi ngon từ vườn — giao tận nhà trong 2 giờ</p>
+            <div className="pp-hero-coupon">
+              <span className="pp-hero-coupon-label">Mã giảm giá:</span>
+              <span className="pp-hero-coupon-code">HALONA10</span>
+            </div>
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <Empty description="Không tìm thấy sản phẩm nào" />
-        ) : viewMode === 'grid' ? (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: 16,
-            }}
-          >
-            {filteredProducts.map((product) => {
-              const rating = product.avgRating;
-              const reviews = product.reviewCount;
+          {heroImages.length > 0 ? (
+            <div className="pp-hero-images">
+              {heroImages.map((p) => (
+                <div key={p.id} className="pp-hero-img-cell">
+                  <img src={getImageUrl(p.thumbnail)} alt={p.name} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="pp-hero-emoji">🍊🍇<br />🥝🍓</div>
+          )}
+        </div>
 
-              return (
-                <div
-                  key={product.id}
-                  style={{
-                    background: '#fff',
-                    borderRadius: 14,
-                    overflow: 'hidden',
-                    border: '1.5px solid #ebebeb',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow =
-                      '0 12px 28px rgba(0,0,0,0.08)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div
-                    onClick={() => navigate(`/products/${product.id}`)}
-                    style={{ position: 'relative', overflow: 'hidden' }}
+        {/* ── Toolbar + popup wrapper ── */}
+        <div ref={toolbarRef} className="pp-toolbar-wrap">
+
+          {/* Toolbar bar */}
+          <div className="pp-toolbar-bar">
+            {/* ── Filter button ── */}
+            <Badge count={activeFilterCount} size="small" color={ACCENT} offset={[-4, 4]} className="pp-filter-badge">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const opening = !filterPopupOpen;
+                  setFilterPopupOpen((v) => !v);
+                  setSortDropdownOpen(false);
+                  if (opening) {
+                    setTimeout(() => {
+                      if (toolbarRef.current) {
+                        const top = toolbarRef.current.getBoundingClientRect().top + window.scrollY - 90;
+                        window.scrollTo({ top, behavior: 'smooth' });
+                      }
+                    }, 10);
+                  }
+                }}
+                className={`pp-filter-btn${filterPopupOpen ? ' pp-filter-btn--open' : activeFilterCount > 0 ? ' pp-filter-btn--active' : ''}`}
+              >
+                <FilterOutlined className="pp-filter-btn-icon" />
+                Bộ lọc nâng cao
+                <DownOutlined className={`pp-chevron-filter${filterPopupOpen ? ' pp-chevron--open' : ''}`} />
+              </button>
+            </Badge>
+
+            {/* Active chips */}
+            {categoryName && (
+              <Tag closable onClose={() => handleCategoryClick(null)}
+                style={{ borderRadius: 8, fontSize: 13, padding: '4px 10px', background: '#fff8ee', borderColor: `${ACCENT}55`, color: ACCENT, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                {categoryName}
+              </Tag>
+            )}
+            {isPriceFiltered && (
+              <Tag closable onClose={() => setPriceRange([0, 500000])}
+                style={{ borderRadius: 8, fontSize: 13, padding: '4px 10px', background: '#fff8ee', borderColor: `${ACCENT}55`, color: ACCENT, fontWeight: 600, display: 'inline-flex', alignItems: 'center' }}>
+                {priceRange[0].toLocaleString('vi-VN')}đ – {priceRange[1].toLocaleString('vi-VN')}đ
+              </Tag>
+            )}
+
+            {/* Right side */}
+            <div className="pp-toolbar-right">
+              <span className="pp-product-count">{filteredProducts.length} sản phẩm</span>
+              <div className="pp-divider-v" />
+
+              {/* View mode */}
+              <div className="pp-view-btns">
+                {(['grid', 'list'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setViewMode(mode)}
+                    className={`pp-view-btn${viewMode === mode ? ' pp-view-btn--active' : ''}`}
                   >
+                    {mode === 'grid' ? <AppstoreOutlined /> : <UnorderedListOutlined />}
+                  </button>
+                ))}
+              </div>
+
+              {/* ── Sort dropdown ── */}
+              <div className="pp-sort-wrap">
+                <button
+                  onClick={() => { setSortDropdownOpen((v) => !v); setFilterPopupOpen(false); }}
+                  className={`pp-sort-btn${sortDropdownOpen ? ' pp-sort-btn--open' : ''}`}
+                >
+                  <span>{currentSortLabel}</span>
+                  <DownOutlined className={`pp-chevron-sort${sortDropdownOpen ? ' pp-chevron--open' : ''}`} />
+                </button>
+
+                {sortDropdownOpen && (
+                  <>
+                    <div className="pp-sort-backdrop" onClick={() => setSortDropdownOpen(false)} />
+                    <div className="pp-sort-list">
+                      {SORT_OPTIONS.map((opt) => {
+                        const isSelected = sortBy === opt.value;
+                        return (
+                          <button
+                            key={opt.value}
+                            onClick={() => { setSortBy(opt.value); setSortDropdownOpen(false); setCurrentPage(1); }}
+                            className={`pp-sort-opt${isSelected ? ' pp-sort-opt--selected' : ''}`}
+                          >
+                            {opt.label}
+                            {isSelected && <CheckOutlined className="pp-check-icon" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* ── Filter popup (absolute, overlays product grid) ── */}
+          {filterPopupOpen && (
+            <>
+              <div className="pp-filter-backdrop" onClick={() => setFilterPopupOpen(false)} />
+              <div className="pp-filter-popup">
+                {/* Header */}
+                <div className="pp-filter-header">
+                  <span className="pp-filter-title">
+                    <FilterOutlined className="pp-icon-brand" />
+                    Bộ lọc nâng cao
+                  </span>
+                  <button onClick={() => setFilterPopupOpen(false)} className="pp-filter-close">✕</button>
+                </div>
+
+                {/* 2-column content */}
+                {FilterContent}
+
+                {/* Footer */}
+                <div className="pp-filter-footer">
+                  <button onClick={handleResetFilter} className="pp-filter-reset">Đặt lại</button>
+                  <button onClick={() => setFilterPopupOpen(false)} className="pp-filter-apply">Áp dụng</button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* ── Products ── */}
+        <div ref={gridRef}>
+          {loading ? (
+            <div className="pp-loading"><Spin size="large" /></div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="pp-empty-wrap">
+              <Empty description="Không tìm thấy sản phẩm nào" />
+            </div>
+          ) : viewMode === 'grid' ? (
+            <div className="pp-grid">
+              {pagedProducts.map((product) => (
+                <div key={product.id} className="pp-card">
+                  {/* Image */}
+                  <div onClick={() => navigate(`/products/${product.id}`)} className="pp-card-img-wrap">
                     {product.thumbnail ? (
-                      <img
-                        src={getImageUrl(product.thumbnail)}
-                        alt={product.name}
-                        style={{
-                          width: '100%',
-                          height: 250,
-                          objectFit: 'cover',
-                        }}
-                      />
+                      <img className="prod-img pp-card-img" src={getImageUrl(product.thumbnail)} alt={product.name} />
                     ) : (
-                      <div
-                        style={{
-                          height: 190,
-                          background: '#f6ffed',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 50,
-                        }}
-                      >
-                        🍊
+                      <div className="pp-card-img-placeholder">🍊</div>
+                    )}
+                    {product.isFeatured && <div className="pp-card-badge">Nổi bật</div>}
+                    {product.stock <= 0 && (
+                      <div className="pp-card-sold-out">
+                        <span className="pp-card-sold-out-label">Hết hàng</span>
                       </div>
                     )}
-                    {product.isFeatured && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 10,
-                          left: 10,
-                          background: '#00a63e',
-                          color: '#fff',
-                          padding: '3px 10px',
-                          borderRadius: 6,
-                          fontSize: 12,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Nổi bật
-                      </div>
-                    )}
-                    
                   </div>
 
-                  <div
-                    style={{
-                      padding: '14px 14px 16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      flex: 1,
-                    }}
-                  >
-                    <h3
-                      onClick={() => navigate(`/products/${product.id}`)}
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 600,
-                        color: '#333',
-                        marginBottom: 3,
-                        cursor: 'pointer',
-                        lineHeight: 1.3,
-                      }}
-                    >
+                  {/* Info */}
+                  <div className="pp-card-info">
+                    <h3 onClick={() => navigate(`/products/${product.id}`)} className="pp-card-name">
                       {product.name}
                     </h3>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        color: '#858484',
-                        marginBottom: 8,
-                      }}
-                    >
-                      {product.category?.name || product.unit}
-                    </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 10 }}>
-                      {reviews > 0 ? (
-                        <>
-                          <StarFilled style={{ color: '#f5a623', fontSize: 14 }} />
-                          <span style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>{rating}</span>
-                          <span style={{ fontSize: 14, color: '#bbb' }}>({reviews})</span>
-                        </>
-                      ) : (
-                        <span style={{ fontSize: 13, color: '#bbb' }}>Chưa có đánh giá</span>
-                      )}
-                    </div>
-
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        gap: 6,
-                        marginBottom: 14,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 19,
-                          fontWeight: 700,
-                          color: '#e04949',
-                        }}
-                      >
-                        {Number(product.price).toLocaleString('vi-VN')} đ
-                      </span>
-                      
-                      <span style={{ fontSize: 14, color: '#999' }}>
-                        /{product.unit}
+                    <div className="pp-card-stock-row">
+                      <span className={`pp-card-stock-dot pp-card-stock-dot--${product.stock > 0 ? 'in' : 'out'}`} />
+                      <span className={`pp-card-stock-text pp-card-stock-text--${product.stock > 0 ? 'in' : 'out'}`}>
+                        {product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
                       </span>
                     </div>
-
-                    <div style={{ marginTop: 'auto' }}>
+                    <div className="pp-card-rating">
+                      <ProductRating rating={product.avgRating} reviews={product.reviewCount} />
+                    </div>
+                    <div className="pp-card-price-row">
+                      <span className="pp-card-price">{Number(product.price).toLocaleString('vi-VN')} đ</span>
+                      <span className="pp-card-unit">/{product.unit}</span>
+                    </div>
+                    <button
+                      onClick={(e) => handleQuickAdd(e, product)}
+                      disabled={product.stock <= 0}
+                      className={`pp-card-add-btn pp-card-add-btn--${product.stock > 0 ? 'available' : 'disabled'}`}
+                    >
+                      <ShoppingCartOutlined />
+                      {product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            /* LIST */
+            <div className="pp-list-view">
+              {pagedProducts.map((product) => (
+                <div key={product.id} className="pp-list-card">
+                  <div onClick={() => navigate(`/products/${product.id}`)} className="pp-list-img-wrap">
+                    {product.thumbnail ? (
+                      <img src={getImageUrl(product.thumbnail)} alt={product.name} className="pp-list-img" />
+                    ) : (
+                      <div className="pp-list-img-placeholder">🍊</div>
+                    )}
+                    {product.isFeatured && <div className="pp-list-badge">Nổi bật</div>}
+                  </div>
+                  <div className="pp-list-info">
+                    <h3 onClick={() => navigate(`/products/${product.id}`)} className="pp-list-name">
+                      {product.name}
+                    </h3>
+                    <div className="pp-list-stock-row">
+                      <span className={`pp-list-stock-dot pp-list-stock-dot--${product.stock > 0 ? 'in' : 'out'}`} />
+                      <span className={`pp-list-stock-text pp-list-stock-text--${product.stock > 0 ? 'in' : 'out'}`}>
+                        {product.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                      </span>
+                    </div>
+                    <ProductRating rating={product.avgRating} reviews={product.reviewCount} />
+                    <div className="pp-list-price-row">
+                      <span className="pp-list-price">{Number(product.price).toLocaleString('vi-VN')} đ</span>
+                      <span className="pp-list-unit">/{product.unit}</span>
+                    </div>
+                  </div>
+                  <div className="pp-list-action">
+                    <Tooltip title={product.stock > 0 ? 'Thêm vào giỏ hàng' : 'Hết hàng'}>
                       <button
                         onClick={(e) => handleQuickAdd(e, product)}
                         disabled={product.stock <= 0}
-                        style={{
-                          width: '100%',
-                          padding: '10px 0',
-                          background:
-                            product.stock > 0 ? 'linear-gradient(135deg, #4caf50, #2e7d32)' : '#ccc',
-                          color: '#ffffff',
-                          border: 'none',
-                          borderRadius: 8,
-                          fontSize: 15,
-                          fontWeight: 550,
-                          cursor:
-                            product.stock > 0
-                              ? 'pointer'
-                              : 'not-allowed',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 7,
-                          transition: 'all 0.2s',
-                        }}
-                        onMouseEnter={(e) => {
-                          if (product.stock > 0)
-                            e.currentTarget.style.background = 'linear-gradient(135deg, #388e3c, #1b5e20)';
-                        }}
-                        onMouseLeave={(e) => {
-                          if (product.stock > 0)
-                            e.currentTarget.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
-                        }}
+                        className={`pp-list-add-btn pp-list-add-btn--${product.stock > 0 ? 'available' : 'disabled'}`}
                       >
                         <ShoppingCartOutlined />
                         {product.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
                       </button>
-                    </div>
+                    </Tooltip>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 14,
-            }}
-          >
-            {filteredProducts.map((product) => {
-              const rating = product.avgRating;
-              const reviews = product.reviewCount;
+              ))}
+            </div>
+          )}
 
-              return (
-                <div
-                  key={product.id}
-                  style={{
-                    background: '#fff',
-                    borderRadius: 14,
-                    border: '1.5px solid #ebebeb',
-                    display: 'flex',
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow =
-                      '0 4px 16px rgba(0,0,0,0.06)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div
-                    onClick={() => navigate(`/products/${product.id}`)}
-                    style={{
-                      width: 170,
-                      height: 150,
-                      flexShrink: 0,
-                      position: 'relative',
-                    }}
-                  >
-                    {product.thumbnail ? (
-                      <img
-                        src={getImageUrl(product.thumbnail)}
-                        alt={product.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                        }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          background: '#f6ffed',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 44,
-                        }}
-                      >
-                        🍊
-                      </div>
-                    )}
-                    {product.isFeatured && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 8,
-                          left: 8,
-                          background: '#00a63e',
-                          color: '#fff',
-                          padding: '3px 10px',
-                          borderRadius: 6,
-                          fontSize: 10,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Nổi bật
-                      </div>
-                    )}
-                  </div>
+          {/* ── Pagination ── */}
+          {!loading && filteredProducts.length > PAGE_SIZE && (
+            <div className="pp-pagination">
+              <ConfigProvider theme={{ token: { colorPrimary: BRAND } }}>
+                <Pagination
+                  current={currentPage}
+                  total={filteredProducts.length}
+                  pageSize={PAGE_SIZE}
+                  onChange={handlePageChange}
+                  showSizeChanger={false}
+                  showQuickJumper={false}
+                />
+              </ConfigProvider>
+            </div>
+          )}
+        </div>
 
-                  <div
-                    style={{
-                      flex: 1,
-                      padding: '14px 18px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <h3
-                      onClick={() => navigate(`/products/${product.id}`)}
-                      style={{
-                        fontSize: 15,
-                        fontWeight: 700,
-                        color: '#333',
-                        marginBottom: 3,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      {product.name}
-                    </h3>
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: '#999',
-                        marginBottom: 6,
-                      }}
-                    >
-                      {product.category?.name}
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
-                      {reviews > 0 ? (
-                        <>
-                          <StarFilled style={{ color: '#f5a623', fontSize: 13 }} />
-                          <span style={{ fontWeight: 600, fontSize: 13 }}>{rating}</span>
-                          <span style={{ color: '#bbb', fontSize: 12 }}>({reviews})</span>
-                        </>
-                      ) : (
-                        <span style={{ color: '#bbb', fontSize: 12 }}>Chưa có đánh giá</span>
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        gap: 6,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 17,
-                          fontWeight: 800,
-                          color: '#e04949',
-                        }}
-                      >
-                        {Number(product.price).toLocaleString('vi-VN')} đ
-                      </span>
-                      <span style={{ fontSize: 12, color: '#999' }}>
-                        /{product.unit}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      paddingRight: 16,
-                    }}
-                  >
-                    <button
-                      onClick={(e) => handleQuickAdd(e, product)}
-                      style={{
-                        padding: '10px 20px',
-                        background: 'linear-gradient(135deg, #4caf50, #2e7d32)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 7,
-                        whiteSpace: 'nowrap',
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = 'linear-gradient(135deg, #388e3c, #1b5e20)')
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)')
-                      }
-                    >
-                      <ShoppingCartOutlined />
-                      Thêm vào giỏ
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );

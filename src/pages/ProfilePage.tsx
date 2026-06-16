@@ -5,7 +5,7 @@ import {
 import {
   UserOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined,
   CameraOutlined, EditOutlined, CheckOutlined, CloseOutlined,
-  CalendarOutlined, RightOutlined, ShoppingOutlined, HeartOutlined,
+  CalendarOutlined, RightOutlined, ShoppingOutlined,
   MessageOutlined, ScanOutlined, SafetyCertificateOutlined,
   FileTextOutlined, QuestionCircleOutlined, StarOutlined,
   LogoutOutlined,
@@ -238,7 +238,6 @@ export default function ProfilePage() {
 
   const utilityItems = [
     { icon: <ShoppingOutlined />, label: 'Đơn hàng của tôi', color: '#4caf50', bg: '#e8f5e9', onClick: () => navigate('/orders') },
-    { icon: <HeartOutlined />, label: 'Sản phẩm yêu thích', color: '#e91e63', bg: '#fce4ec', onClick: () => message.info('Tính năng đang phát triển') },
     { icon: <MessageOutlined />, label: 'Chat tư vấn', color: '#2196f3', bg: '#e3f2fd', badge: 'AI', onClick: () => navigate('/chat') },
     { icon: <ScanOutlined />, label: 'Nhận diện trái cây', color: '#9c27b0', bg: '#f3e5f5', badge: 'AI', onClick: () => navigate('/fruit-recognition') },
   ];

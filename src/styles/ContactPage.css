@@ -1,0 +1,391 @@
+/* ===== ContactPage ===== */
+
+.contact-page {
+  margin: -24px -16px;
+}
+
+/* ----- Hero ----- */
+.contact-hero {
+  position: relative;
+  height: 400px;
+  background-image: url("https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1400&q=80");
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.contact-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(0, 100, 0, 0.65) 0%, rgba(0, 0, 0, 0.4) 100%);
+}
+
+.contact-hero-content {
+  position: relative;
+  z-index: 1;
+  padding: 0 20px;
+}
+
+.contact-hero-title {
+  color: #fff;
+  font-size: 46px;
+  font-weight: 800;
+  margin: 0;
+  font-family: 'Georgia', serif;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+}
+
+.contact-hero-sub {
+  color: #e0e0e0;
+  font-size: 18px;
+  margin: 14px auto 0;
+  max-width: 500px;
+}
+
+/* ----- Info cards ----- */
+.contact-info {
+  background: #fff;
+  padding: 64px 48px;
+}
+
+.contact-info-grid {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 32px;
+}
+
+.contact-info-card {
+  text-align: center;
+  padding: 24px;
+  border-radius: 12px;
+  border: 1.5px solid #e8e8e8;
+  transition: all 0.3s ease;
+}
+
+.contact-info-card:hover {
+  border-color: #00a63e;
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 166, 62, 0.1);
+}
+
+.contact-info-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #e8f5e9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 28px;
+  color: #00a63e;
+}
+
+.contact-info-title {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.contact-info-line {
+  color: #666;
+  font-size: 14px;
+  margin: 4px 0;
+  line-height: 1.6;
+}
+
+/* ----- Form section ----- */
+.contact-form-section {
+  background: #f9f6f1;
+  padding: 64px 48px;
+}
+
+.contact-form-inner {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.contact-section-head {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.contact-divider-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.contact-divider-line {
+  flex: 1;
+  max-width: 150px;
+  height: 2px;
+  background: #8b7355;
+}
+
+.contact-divider-heading {
+  font-size: 30px;
+  font-weight: 800;
+  color: #333;
+  margin: 0;
+}
+
+.contact-section-sub {
+  color: #888;
+  font-size: 15px;
+}
+
+.contact-form-row {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.contact-form-box {
+  flex: 1;
+  min-width: 400px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.contact-form-fields {
+  display: flex;
+  gap: 16px;
+}
+
+.contact-form-field {
+  flex: 1;
+}
+
+.contact-submit-btn {
+  background: #00a63e;
+  border-color: #00a63e;
+  height: 48px;
+  padding-left: 32px;
+  padding-right: 32px;
+  font-weight: 600;
+  font-size: 15px;
+  border-radius: 8px;
+}
+
+.contact-map {
+  flex: 1;
+  min-width: 400px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+.contact-map iframe {
+  border: 0;
+  min-height: 450px;
+}
+
+/* ----- FAQ ----- */
+.contact-faq {
+  background: #fff;
+  padding: 64px 48px;
+}
+
+.contact-faq-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.contact-faq-title {
+  font-size: 30px;
+  font-weight: 800;
+  color: #333;
+}
+
+.contact-faq-item {
+  padding: 24px 28px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  border: 1.5px solid #e8e8e8;
+  background: #fff;
+  transition: all 0.3s ease;
+}
+
+.contact-faq-item:hover {
+  border-color: #00a63e;
+  background: #f6ffed;
+}
+
+.contact-faq-q {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.contact-faq-q-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #00a63e;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.contact-faq-a {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.8;
+  margin: 0;
+  padding-left: 38px;
+}
+
+/* ----- Social ----- */
+.contact-social {
+  background: linear-gradient(135deg, #00a63e 0%, #1b5e20 100%);
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.contact-social-title {
+  color: #fff;
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+.contact-social-sub {
+  color: #c8e6c9;
+  font-size: 15px;
+  margin-bottom: 28px;
+}
+
+.contact-social-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.contact-social-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .contact-info,
+  .contact-form-section,
+  .contact-faq {
+    padding: 44px 20px;
+  }
+
+  .contact-social {
+    padding: 40px 20px;
+  }
+
+  .contact-hero {
+    height: 280px;
+  }
+
+  .contact-hero-title {
+    font-size: 32px;
+  }
+
+  .contact-hero-sub {
+    font-size: 15px;
+  }
+
+  .contact-divider-line {
+    max-width: 40px;
+  }
+
+  .contact-divider-heading,
+  .contact-faq-title {
+    font-size: 24px;
+  }
+
+  /* Form + map xếp dọc, bỏ min-width cứng */
+  .contact-form-box,
+  .contact-map {
+    min-width: 0;
+    flex-basis: 100%;
+  }
+
+  .contact-form-box {
+    padding: 24px;
+  }
+
+  .contact-map iframe {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 479px) {
+  .contact-info,
+  .contact-form-section,
+  .contact-faq,
+  .contact-social {
+    padding: 30px 35px;
+  }
+
+  .contact-hero {
+    height: 240px;
+  }
+
+  .contact-hero-title {
+    font-size: 26px;
+  }
+
+  /* Ẩn 2 thanh ngang cạnh tiêu đề */
+  .contact-divider-line {
+    display: none;
+  }
+
+  /* 2 ô input mỗi hàng -> xếp dọc */
+  .contact-form-fields {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .contact-faq-item {
+    padding: 20px;
+  }
+
+  .contact-faq-a {
+    padding-left: 0;
+    margin-top: 8px;
+  }
+
+  .contact-social-title {
+    font-size: 23px;
+  }
+
+  .contact-social-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+}

@@ -15,13 +15,15 @@ import {
   message,
   Card,
   Tabs,
+  Modal 
 } from 'antd';
-import { ShoppingCartOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { ShoppingCartOutlined, HomeOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useCart } from '../contexts/useCart';
 import { useAuth } from '../contexts/useAuth';
 import { getImageUrl } from '../utils/image';
+import '../styles/ProductDetailPage.css';
 
 const { Title, Text, Paragraph } = Typography;
 
@@ -36,8 +38,6 @@ interface Product {
   unit: string;
   isActive: boolean;
   isFeatured: boolean;
-  categoryId: number;
-  category: { id: number; name: string };
   avgRating: number;
   reviewCount: number;
 }
@@ -49,7 +49,6 @@ interface Review {
   createdAt: string;
   user: { id: number; name: string; avatar: string };
 }
-
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -109,26 +108,30 @@ export default function ProductDetailPage() {
   const handleAddToCart = () => {
     if (!product) return;
 
+    if (!isAuthenticated) {
+      Modal.confirm({
+        title: 'Bạn cần đăng nhập',
+        content: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.',
+        okText: 'Đăng nhập',
+        cancelText: 'Để sau',
+        okButtonProps: { style: { background: '#00a63e', borderColor: '#00a63e' } },
+        onOk: () => navigate('/login'),
+      });
+      return;
+    }
+
     if (product.stock <= 0) {
       message.warning('Sản phẩm đã hết hàng');
       return;
     }
-
     if (quantity > product.stock) {
       message.warning(`Chỉ còn ${product.stock} ${product.unit}`);
       return;
     }
-
     addToCart({
-      productId: product.id,
-      name: product.name,
-      price: Number(product.price),
-      thumbnail: product.thumbnail,
-      unit: product.unit,
-      quantity: quantity,
-      stock: product.stock,
+      productId: product.id, name: product.name, price: Number(product.price),
+      thumbnail: product.thumbnail, unit: product.unit, quantity: quantity, stock: product.stock,
     });
-
     message.success('Đã thêm vào giỏ hàng!');
   };
 
@@ -169,7 +172,7 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: 100 }}>
+      <div className="pd-loading">
         <Spin size="large" />
       </div>
     );
@@ -183,75 +186,35 @@ export default function ProductDetailPage() {
   ];
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <Button
-        icon={<ArrowLeftOutlined />}
-        type="link"
-        onClick={() => navigate(-1)}
-        style={{ marginBottom: 16, padding: 0, color: '#00a63e' }}
-      >
-        Quay lại
-      </Button>
+    <div className="pd-page">
+      {/* Breadcrumb */}
+      <div className="pd-breadcrumb">
+        <span className="pd-breadcrumb-link" onClick={() => navigate('/')}>
+          <HomeOutlined /> Trang chủ
+        </span>
+        <span className="pd-breadcrumb-sep">/</span>
+        <span className="pd-breadcrumb-current">Chi tiết sản phẩm</span>
+      </div>
 
-      <Card style={{ borderRadius: 12, marginBottom: 24 }}>
+      <Card className="pd-card">
         <Row gutter={[40, 24]}>
           <Col xs={24} md={11}>
-            <div
-              style={{
-                width: '100%',
-                height: 400,
-                borderRadius: 12,
-                overflow: 'hidden',
-                background: '#fafafa',
-                border: '1px solid #f0f0f0',
-              }}
-            >
+            <div className="pd-main-img">
               <img
                 src={selectedImage ? getImageUrl(selectedImage) : undefined}
                 alt={product.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
             </div>
 
             {allImages.length > 1 && (
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 10,
-                  marginTop: 14,
-                  overflowX: 'auto',
-                  paddingBottom: 4,
-                }}
-              >
+              <div className="pd-thumbs">
                 {allImages.map((img, index) => (
                   <div
                     key={index}
                     onClick={() => setSelectedImage(img)}
-                    style={{
-                      width: 68,
-                      height: 68,
-                      minWidth: 68,
-                      borderRadius: 10,
-                      overflow: 'hidden',
-                      cursor: 'pointer',
-                      border:
-                        selectedImage === img
-                          ? '3px solid #00a63e'
-                          : '2px solid #e8e8e8',
-                      transition: 'all 0.2s ease',
-                      background: '#fafafa',
-                    }}
+                    className={`pd-thumb${selectedImage === img ? ' pd-thumb--active' : ''}`}
                   >
-                    <img
-                      src={getImageUrl(img)}
-                      alt={`Ảnh ${index + 1}`}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block',
-                      }}
-                    />
+                    <img src={getImageUrl(img)} alt={`Ảnh ${index + 1}`} />
                   </div>
                 ))}
               </div>
@@ -260,116 +223,60 @@ export default function ProductDetailPage() {
 
           <Col xs={24} md={13}>
             {product.isFeatured && (
-              <div
-                style={{
-                  display: 'inline-block',
-                  background: '#00a63e',
-                  color: '#fff',
-                  padding: '4px 16px',
-                  borderRadius: 6,
-                  fontSize: 13,
-                  fontWeight: 600,
-                  marginBottom: 14,
-                }}
-              >
-                Nổi bật
-              </div>
+              <div className="pd-featured-badge">Nổi bật</div>
             )}
 
-            <Title
-              level={2}
-              style={{ margin: '0 0 4px 0', fontSize: 28, fontWeight: 800 }}
-            >
+            <Title level={2} className="pd-title">
               {product.name}
             </Title>
 
-            {product.category && (
-              <Text
-                style={{
-                  fontSize: 15,
-                  color: '#888',
-                  display: 'block',
-                  marginBottom: 14,
-                }}
-              >
-                {product.category.name}
-              </Text>
-            )}
-
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 20,
-              }}
-            >
-              <Rate
-                disabled
-                value={averageRating.average}
-                allowHalf
-                style={{ fontSize: 18 }}
-              />
-              <Text style={{ fontWeight: 600, fontSize: 15 }}>
-                {averageRating.average}
-              </Text>
-              <Text style={{ color: '#888' }}>
+            <div className="pd-rating-row">
+              <span className="pd-stars">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <span
+                    key={i}
+                    className="pd-star"
+                    style={{
+                      color:
+                        i <= Math.round(averageRating.average)
+                          ? '#f5a623'
+                          : '#e0e0e0',
+                    }}
+                  >
+                    ★
+                  </span>
+                ))}
+              </span>
+              <Text className="pd-rating-count">
                 ({averageRating.total} đánh giá)
               </Text>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-              <Text style={{ fontSize: 32, color: '#333', fontWeight: 800 }}>
+            <div className="pd-price-row">
+              <Text className="pd-price">
                 {Number(product.price).toLocaleString('vi-VN')} đ
               </Text>
-              <Text style={{ fontSize: 15, color: '#999' }}>/{product.unit}</Text>
+              <Text className="pd-price-unit">/{product.unit}</Text>
             </div>
 
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                marginBottom: 24,
-              }}
-            >
+            <div className="pd-stock-row">
               {product.stock > 0 ? (
                 <>
-                  <span style={{ color: '#00a63e', fontSize: 18 }}>✓</span>
-                  <Text style={{ fontSize: 15, color: '#555' }}>
+                  <span className="pd-stock-check">✓</span>
+                  <Text className="pd-stock-text">
                     Còn {product.stock} {product.unit} trong kho
                   </Text>
                 </>
               ) : (
-                <Tag
-                  color="red"
-                  style={{ fontSize: 13, padding: '4px 12px' }}
-                >
+                <Tag color="red" style={{ fontSize: 13, padding: '4px 12px' }}>
                   Hết hàng
                 </Tag>
               )}
             </div>
 
-            <div style={{ marginBottom: 24 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontWeight: 700,
-                  color: '#333',
-                  display: 'block',
-                  marginBottom: 8,
-                }}
-              >
-                Mô tả sản phẩm
-              </Text>
-              <Paragraph
-                style={{
-                  fontSize: 14,
-                  color: '#666',
-                  lineHeight: 1.8,
-                  margin: 0,
-                }}
-              >
+            <div className="pd-desc-block">
+              <Text className="pd-desc-label">Mô tả sản phẩm</Text>
+              <Paragraph className="pd-desc-text">
                 {product.description}
               </Paragraph>
             </div>
@@ -378,142 +285,70 @@ export default function ProductDetailPage() {
 
             {product.stock > 0 && (
               <>
-                <Text
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: '#e04949',
-                    display: 'block',
-                    marginBottom: 10,
-                  }}
-                >
-                  Số lượng
-                </Text>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 14,
-                    marginBottom: 24,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      border: '1.5px solid #e0e0e0',
-                      borderRadius: 10,
-                      overflow: 'hidden',
-                    }}
-                  >
+                <Text className="pd-qty-label">Số lượng</Text>
+                <div className="pd-qty-row">
+                  <div className="pd-qty">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      style={{
-                        width: 44,
-                        height: 44,
-                        border: 'none',
-                        background: '#fafafa',
-                        cursor: 'pointer',
-                        fontSize: 20,
-                        color: '#666',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+                      className="pd-qty-btn"
                     >
                       −
                     </button>
-                    <div
-                      style={{
-                        width: 56,
-                        height: 44,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 17,
-                        fontWeight: 600,
-                        borderLeft: '1.5px solid #e0e0e0',
-                        borderRight: '1.5px solid #e0e0e0',
-                      }}
-                    >
-                      {quantity}
-                    </div>
+                    <div className="pd-qty-value">{quantity}</div>
                     <button
                       onClick={() =>
                         setQuantity(Math.min(product.stock, quantity + 1))
                       }
-                      style={{
-                        width: 44,
-                        height: 44,
-                        border: 'none',
-                        background: '#fafafa',
-                        cursor: 'pointer',
-                        fontSize: 20,
-                        color: '#666',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
+                      className="pd-qty-btn"
                     >
                       +
                     </button>
                   </div>
-                  <Text style={{ color: '#999', fontSize: 14 }}>
-                    {product.unit}
-                  </Text>
+                  <Text className="pd-qty-unit">{product.unit}</Text>
                 </div>
 
-                <div style={{ display: 'flex', gap: 14 }}>
-                  <button
-                    onClick={handleAddToCart}
-                    style={{
-                      flex: 1,
-                      height: 52,
-                      borderRadius: 12,
-                      border: '2px solid #00a63e',
-                      background: '#fff',
-                      color: '#00a63e',
-                      fontSize: 16,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#f6ffed';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#fff';
-                    }}
-                  >
+                <div className="pd-actions">
+                  <button onClick={handleAddToCart} className="pd-btn-cart">
                     <ShoppingCartOutlined style={{ fontSize: 18 }} />
                     Thêm vào giỏ
                   </button>
                   <button
                     onClick={() => {
+                      if (!isAuthenticated) {
+                        Modal.confirm({
+                          title: 'Bạn cần đăng nhập',
+                          content: 'Vui lòng đăng nhập để mua hàng.',
+                          okText: 'Đăng nhập',
+                          cancelText: 'Để sau',
+                          okButtonProps: { style: { background: '#00a63e', borderColor: '#00a63e' } },
+                          onOk: () => navigate('/login'),
+                        });
+                        return;
+                      }
+
+                      if (product.stock <= 0) {
+                        message.warning('Sản phẩm đã hết hàng');
+                        return;
+                      }
+                      if (quantity > product.stock) {
+                        message.warning(`Chỉ còn ${product.stock} ${product.unit}`);
+                        return;
+                      }
+
+                      // Đưa đúng sản phẩm hiện tại (kèm số lượng) sang checkout
+                      const buyNowItem = {
+                        productId: product.id,
+                        name: product.name,
+                        price: Number(product.price),
+                        thumbnail: product.thumbnail,
+                        unit: product.unit,
+                        quantity: quantity,
+                        stock: product.stock,
+                      };
+                      localStorage.setItem('checkoutItems', JSON.stringify([buyNowItem]));
                       navigate('/checkout');
                     }}
-                    style={{
-                      flex: 1,
-                      height: 52,
-                      borderRadius: 12,
-                      border: 'none',
-                      background: 'linear-gradient(135deg, #4caf50, #2e7d32)',
-                      color: '#fff',
-                      fontSize: 16,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #388e3c, #1b5e20)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)';
-                    }}
+                    className="pd-btn-buy"
                   >
                     Mua ngay
                   </button>
@@ -524,24 +359,16 @@ export default function ProductDetailPage() {
         </Row>
       </Card>
 
-      <Card style={{ borderRadius: 12, marginBottom: 24 }}>
+      <Card className="pd-tabs-card">
         <Tabs
           defaultActiveKey="description"
           size="large"
           items={[
             {
               key: 'description',
-              label: <span style={{ fontWeight: 600 }}>MÔ TẢ</span>,
+              label: <span className="pd-tab-label">MÔ TẢ</span>,
               children: (
-                <Paragraph
-                  style={{
-                    fontSize: 15,
-                    lineHeight: 2,
-                    color: '#444',
-                    whiteSpace: 'pre-wrap',
-                    padding: '16px 0',
-                  }}
-                >
+                <Paragraph className="pd-tab-desc">
                   {product.description}
                 </Paragraph>
               ),
@@ -549,20 +376,14 @@ export default function ProductDetailPage() {
             {
               key: 'reviews',
               label: (
-                <span style={{ fontWeight: 600 }}>
+                <span className="pd-tab-label">
                   ĐÁNH GIÁ ({averageRating.total})
                 </span>
               ),
               children: (
-                <div style={{ padding: '16px 0' }}>
+                <div className="pd-tab-reviews">
                   {isAuthenticated ? (
-                    <Card
-                      style={{
-                        marginBottom: 24,
-                        background: '#f9f9f9',
-                        borderRadius: 10,
-                      }}
-                    >
+                    <Card className="pd-review-form-card">
                       <Title level={5}>Viết đánh giá của bạn</Title>
                       <Form
                         form={form}
@@ -573,10 +394,7 @@ export default function ProductDetailPage() {
                           name="rating"
                           label="Đánh giá"
                           rules={[
-                            {
-                              required: true,
-                              message: 'Vui lòng chọn số sao!',
-                            },
+                            { required: true, message: 'Vui lòng chọn số sao!' },
                           ]}
                         >
                           <Rate style={{ fontSize: 28 }} />
@@ -593,33 +411,19 @@ export default function ProductDetailPage() {
                           type="primary"
                           htmlType="submit"
                           loading={reviewLoading}
-                          style={{
-                            background: 'linear-gradient(135deg, #4caf50, #2e7d32)',
-                            borderColor: '#2e7d32',
-                          }}
+                          className="pd-review-submit"
                         >
                           Gửi đánh giá
                         </Button>
                       </Form>
                     </Card>
                   ) : (
-                    <Card
-                      style={{
-                        marginBottom: 24,
-                        textAlign: 'center',
-                        background: '#f9f9f9',
-                        borderRadius: 10,
-                      }}
-                    >
+                    <Card className="pd-login-card">
                       <Text>
                         Vui lòng{' '}
                         <a
                           onClick={() => navigate('/login')}
-                          style={{
-                            color: '#00a63e',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                          }}
+                          className="pd-login-link"
                         >
                           đăng nhập
                         </a>{' '}
@@ -636,13 +440,7 @@ export default function ProductDetailPage() {
                           <List.Item.Meta
                             avatar={<Avatar icon={<span>👤</span>} />}
                             title={
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 12,
-                                }}
-                              >
+                              <div className="pd-review-head">
                                 <Text strong>{review.user?.name}</Text>
                                 <Rate
                                   disabled
@@ -656,10 +454,7 @@ export default function ProductDetailPage() {
                                 <Paragraph style={{ margin: '4px 0' }}>
                                   {review.comment || 'Không có nội dung'}
                                 </Paragraph>
-                                <Text
-                                  type="secondary"
-                                  style={{ fontSize: 12 }}
-                                >
+                                <Text type="secondary" style={{ fontSize: 12 }}>
                                   {new Date(
                                     review.createdAt,
                                   ).toLocaleDateString('vi-VN')}
@@ -683,15 +478,8 @@ export default function ProductDetailPage() {
       </Card>
 
       {relatedProducts.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <Title
-            level={3}
-            style={{
-              marginBottom: 20,
-              fontWeight: 800,
-              fontStyle: 'italic',
-            }}
-          >
+        <div className="pd-related">
+          <Title level={3} className="pd-related-title">
             Sản phẩm liên quan
           </Title>
 
@@ -700,127 +488,87 @@ export default function ProductDetailPage() {
               <Col xs={12} sm={8} md={6} key={rp.id}>
                 <div
                   onClick={() => navigate(`/products/${rp.id}`)}
-                  style={{
-                    background: '#fff',
-                    borderRadius: 14,
-                    overflow: 'hidden',
-                    border: '1.5px solid #ebebeb',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-4px)';
-                    e.currentTarget.style.boxShadow =
-                      '0 8px 24px rgba(0,0,0,0.08)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
+                  className="pd-rp-card"
                 >
-                  <div style={{ position: 'relative' }}>
+                  <div className="pd-rp-imgwrap">
                     {rp.thumbnail ? (
                       <img
                         src={getImageUrl(rp.thumbnail)}
                         alt={rp.name}
-                        style={{
-                          width: '100%',
-                          height: 200,
-                          objectFit: 'cover',
-                        }}
+                        className="pd-rp-img"
                       />
                     ) : (
-                      <div
-                        style={{
-                          height: 200,
-                          background: '#f6ffed',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 48,
-                        }}
-                      >
-                        🍊
-                      </div>
+                      <div className="pd-rp-img-placeholder">🍊</div>
                     )}
                     {rp.isFeatured && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 10,
-                          left: 10,
-                          background: '#00a63e',
-                          color: '#fff',
-                          padding: '3px 10px',
-                          borderRadius: 6,
-                          fontSize: 12,
-                          fontWeight: 600,
-                        }}
-                      >
-                        Nổi bật
-                      </div>
+                      <div className="pd-rp-featured">Nổi bật</div>
                     )}
-                    
                   </div>
 
-                  <div style={{ padding: '14px 14px 16px' }}>
-                    <Text
-                      strong
-                      style={{
-                        fontSize: 16,
-                        display: 'block',
-                        marginBottom: 2,
-                        color: '#333',
-                      }}
-                    >
+                  <div className="pd-rp-body">
+                    <Text strong className="pd-rp-name">
                       {rp.name}
                     </Text>
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        color: '#858484',
-                        display: 'block',
-                        marginBottom: 6,
-                      }}
-                    >
-                      {rp.category?.name || rp.unit}
-                    </Text>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 8 }}>
-                      {rp.reviewCount > 0 ? (
-                        <>
-                          <span style={{ color: '#f5a623', fontSize: 14 }}>★</span>
-                          <span style={{ fontWeight: 600, fontSize: 14 }}>{rp.avgRating}</span>
-                          <span style={{ color: '#bbb', fontSize: 13 }}>({rp.reviewCount})</span>
-                        </>
-                      ) : (
-                        <span style={{ color: '#bbb', fontSize: 13 }}>Chưa có đánh giá</span>
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'baseline',
-                        gap: 6,
-                        marginBottom: 12,
-                      }}
-                    >
+
+                    {/* Stock indicator */}
+                    <div className="pd-rp-stock">
                       <span
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 700,
-                          color: '#e04949',
-                        }}
+                        className="pd-rp-stock-dot"
+                        style={{ background: rp.stock > 0 ? '#00a63e' : '#ff4d4f' }}
+                      />
+                      <span
+                        className="pd-rp-stock-text"
+                        style={{ color: rp.stock > 0 ? '#00a63e' : '#ff4d4f' }}
                       >
+                        {rp.stock > 0 ? 'Còn hàng' : 'Hết hàng'}
+                      </span>
+                    </div>
+
+                    {/* Rating */}
+                    <div className="pd-rp-rating">
+                      <span className="pd-rp-stars">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <span
+                            key={i}
+                            className="pd-rp-star"
+                            style={{
+                              color:
+                                i <= Math.round(rp.avgRating)
+                                  ? '#f5a623'
+                                  : '#e0e0e0',
+                            }}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </span>
+                      <span className="pd-rp-review-count">
+                        ({rp.reviewCount})
+                      </span>
+                    </div>
+
+                    {/* Price */}
+                    <div className="pd-rp-price-row">
+                      <span className="pd-rp-price">
                         {Number(rp.price).toLocaleString('vi-VN')} đ
                       </span>
-                      
-                      <span style={{ fontSize: 14, color: '#999' }}>
-                        /{rp.unit}
-                      </span>
+                      <span className="pd-rp-price-unit">/{rp.unit}</span>
                     </div>
+
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
+                        if (!isAuthenticated) {
+                          Modal.confirm({
+                            title: 'Bạn cần đăng nhập',
+                            content: 'Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.',
+                            okText: 'Đăng nhập',
+                            cancelText: 'Để sau',
+                            okButtonProps: { style: { background: '#00a63e', borderColor: '#00a63e' } },
+                            onOk: () => navigate('/login'),
+                          });
+                          return;
+                        }
                         addToCart({
                           productId: rp.id,
                           name: rp.name,
@@ -832,31 +580,11 @@ export default function ProductDetailPage() {
                         });
                         message.success(`Đã thêm "${rp.name}" vào giỏ`);
                       }}
-                      style={{
-                        width: '100%',
-                        padding: '10px 0',
-                        background: 'linear-gradient(135deg, #4caf50, #2e7d32)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 8,
-                        fontSize: 16,
-                        fontWeight: 550,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 6,
-                        transition: 'all 0.2s',
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.background = 'linear-gradient(135deg, #388e3c, #1b5e20)')
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.background = 'linear-gradient(135deg, #4caf50, #2e7d32)')
-                      }
+                      disabled={rp.stock <= 0}
+                      className={`pd-rp-cart-btn ${rp.stock > 0 ? 'pd-rp-cart-btn--active' : 'pd-rp-cart-btn--disabled'}`}
                     >
                       <ShoppingCartOutlined />
-                      Thêm vào giỏ
+                      {rp.stock > 0 ? 'Thêm vào giỏ' : 'Hết hàng'}
                     </button>
                   </div>
                 </div>

@@ -369,7 +369,7 @@ const styles: { [key: string]: React.CSSProperties } = {
   // Nút tròn nổi
   fab: {
     position: 'fixed',
-    bottom: 24,
+    bottom: 70,
     right: 24,
     width: 60,
     height: 60,

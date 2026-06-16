@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
+import '../styles/OrdersPage.css';
 
 const { Title, Text } = Typography;
 
@@ -80,6 +81,15 @@ const paymentLabels: Record<string, string> = {
   banking: 'Chuyển khoản ngân hàng',
 };
 
+const filterTabs = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'pending', label: 'Chờ xác nhận' },
+  { key: 'confirmed', label: 'Đã xác nhận' },
+  { key: 'shipping', label: 'Đang giao' },
+  { key: 'completed', label: 'Hoàn thành' },
+  { key: 'cancelled', label: 'Đã hủy' },
+];
+
 function getStepCurrent(status: string): number {
   const steps: Record<string, number> = {
     pending: 0,
@@ -117,7 +127,7 @@ export default function OrdersPage() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: 80 }}>
+      <div className="orders-center">
         <Spin size="large" />
       </div>
     );
@@ -125,14 +135,14 @@ export default function OrdersPage() {
 
   if (orders.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: 80 }}>
+      <div className="orders-center">
         <Empty description="Bạn chưa có đơn hàng nào" />
         <Button
           type="primary"
           icon={<ShoppingOutlined />}
           size="large"
           onClick={() => navigate('/products')}
-          style={{ marginTop: 16, background: '#00a63e', borderColor: '#00a63e' }}
+          className="orders-empty-btn"
         >
           Mua sắm ngay
         </Button>
@@ -141,18 +151,9 @@ export default function OrdersPage() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div className="orders-page">
       {/* Header */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 24,
-          flexWrap: 'wrap',
-          gap: 16,
-        }}
-      >
+      <div className="orders-header">
         <Title level={3} style={{ margin: 0 }}>
           📋 Đơn hàng của tôi
         </Title>
@@ -160,38 +161,14 @@ export default function OrdersPage() {
       </div>
 
       {/* Bộ lọc */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 8,
-          marginBottom: 24,
-          overflowX: 'auto',
-          paddingBottom: 4,
-        }}
-      >
-        {[
-          { key: 'all', label: 'Tất cả' },
-          { key: 'pending', label: 'Chờ xác nhận' },
-          { key: 'confirmed', label: 'Đã xác nhận' },
-          { key: 'shipping', label: 'Đang giao' },
-          { key: 'completed', label: 'Hoàn thành' },
-          { key: 'cancelled', label: 'Đã hủy' },
-        ].map((item) => (
+      <div className="orders-filters">
+        {filterTabs.map((item) => (
           <button
             key={item.key}
             onClick={() => setFilter(item.key)}
-            style={{
-              padding: '8px 18px',
-              borderRadius: 20,
-              border: filter === item.key ? '2px solid #00a63e' : '1.5px solid #e0e0e0',
-              background: filter === item.key ? '#f6ffed' : '#fff',
-              color: filter === item.key ? '#00a63e' : '#666',
-              fontWeight: filter === item.key ? 700 : 500,
-              fontSize: 13,
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              transition: 'all 0.2s ease',
-            }}
+            className={`orders-filter-btn${
+              filter === item.key ? ' orders-filter-btn--active' : ''
+            }`}
           >
             {item.label}
           </button>
@@ -200,103 +177,64 @@ export default function OrdersPage() {
 
       {/* Danh sách đơn hàng */}
       {filteredOrders.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: 40 }}>
+        <div className="orders-empty-filter">
           <Text type="secondary">Không có đơn hàng nào với trạng thái này</Text>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div className="orders-list">
           {filteredOrders.map((order) => {
             const config = statusConfig[order.status] || statusConfig.pending;
 
             return (
-              <div
-                key={order.id}
-                style={{
-                  background: '#fff',
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                  border: '1.5px solid #e8e8e8',
-                  transition: 'all 0.3s ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.06)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
+              <div key={order.id} className="orders-card">
                 {/* Header đơn hàng */}
                 <div
+                  className="orders-card-head"
                   style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '16px 24px',
                     background: config.bg,
                     borderBottom: `2px solid ${config.color}22`,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div className="orders-card-head-left">
                     <div
-                      style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '50%',
-                        background: '#fff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: config.color,
-                        fontSize: 16,
-                        boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
-                      }}
+                      className="orders-card-icon"
+                      style={{ color: config.color }}
                     >
                       {config.icon}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 15, color: '#333' }}>
-                        Đơn hàng #{order.id}
-                      </div>
-                      <div style={{ fontSize: 12, color: '#999' }}>
+                      <div className="orders-card-id">Đơn hàng #{order.id}</div>
+                      <div className="orders-card-date">
                         {new Date(order.createdAt).toLocaleString('vi-VN')}
                       </div>
                     </div>
                   </div>
-                  <Tag
-                    color={config.color}
-                    style={{
-                      fontSize: 13,
-                      padding: '4px 14px',
-                      borderRadius: 20,
-                      fontWeight: 600,
-                      border: 'none',
-                    }}
-                  >
+                  <Tag color={config.color} className="orders-card-tag">
                     {config.label}
                   </Tag>
                 </div>
 
                 {/* Thanh tiến trình */}
                 {order.status !== 'cancelled' && (
-                  <div style={{ padding: '20px 24px 8px' }}>
+                  <div className="orders-steps">
                     <Steps
                       current={getStepCurrent(order.status)}
                       size="small"
                       items={[
                         {
-                          title: <span style={{ fontSize: 12 }}>Chờ xác nhận</span>,
+                          title: <span className="orders-step-title">Chờ xác nhận</span>,
                           icon: <ClockCircleOutlined />,
                         },
                         {
-                          title: <span style={{ fontSize: 12 }}>Đã xác nhận</span>,
+                          title: <span className="orders-step-title">Đã xác nhận</span>,
                           icon: <CheckCircleOutlined />,
                         },
                         {
-                          title: <span style={{ fontSize: 12 }}>Đang giao</span>,
+                          title: <span className="orders-step-title">Đang giao</span>,
                           icon: <CarOutlined />,
                         },
                         {
-                          title: <span style={{ fontSize: 12 }}>Hoàn thành</span>,
+                          title: <span className="orders-step-title">Hoàn thành</span>,
                           icon: <SmileOutlined />,
                         },
                       ]}
@@ -305,41 +243,21 @@ export default function OrdersPage() {
                 )}
 
                 {/* Danh sách sản phẩm */}
-                <div style={{ padding: '12px 24px' }}>
-                  {order.items.map((item, index) => (
-                    <div
-                      key={item.id}
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        padding: '12px 0',
-                        borderBottom:
-                          index < order.items.length - 1
-                            ? '1px solid #f5f5f5'
-                            : 'none',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div
-                          style={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: '50%',
-                            background: '#00a63e',
-                            flexShrink: 0,
-                          }}
-                        />
+                <div className="orders-items">
+                  {order.items.map((item) => (
+                    <div key={item.id} className="orders-item">
+                      <div className="orders-item-left">
+                        <div className="orders-item-dot" />
                         <div>
-                          <div style={{ fontWeight: 500, fontSize: 14, color: '#333' }}>
+                          <div className="orders-item-name">
                             {item.productName}
                           </div>
-                          <div style={{ fontSize: 12, color: '#999' }}>
+                          <div className="orders-item-meta">
                             {Number(item.productPrice).toLocaleString('vi-VN')}đ x {item.quantity}
                           </div>
                         </div>
                       </div>
-                      <div style={{ fontWeight: 600, color: '#333', fontSize: 14 }}>
+                      <div className="orders-item-subtotal">
                         {Number(item.subtotal).toLocaleString('vi-VN')}đ
                       </div>
                     </div>
@@ -347,62 +265,35 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Thông tin giao hàng + Tổng tiền */}
-                <div
-                  style={{
-                    padding: '16px 24px',
-                    background: '#fafafa',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: 16,
-                    borderTop: '1px solid #f0f0f0',
-                  }}
-                >
-                  <div style={{ fontSize: 13, color: '#666', lineHeight: 1.8 }}>
+                <div className="orders-footer">
+                  <div className="orders-shipping">
                     <div>
-                      <span style={{ color: '#999' }}>Giao đến: </span>
-                      <span style={{ color: '#333', fontWeight: 500 }}>
+                      <span className="orders-shipping-muted">Giao đến: </span>
+                      <span className="orders-shipping-name">
                         {order.receiverName} - {order.shippingPhone}
                       </span>
                     </div>
                     <div>
-                      <span style={{ color: '#999' }}>Địa chỉ: </span>
-                      <span style={{ color: '#333' }}>{order.shippingAddress}</span>
+                      <span className="orders-shipping-muted">Địa chỉ: </span>
+                      <span className="orders-shipping-val">{order.shippingAddress}</span>
                     </div>
                     <div>
-                      <span style={{ color: '#999' }}>Thanh toán: </span>
-                      <span style={{ color: '#333' }}>
+                      <span className="orders-shipping-muted">Thanh toán: </span>
+                      <span className="orders-shipping-val">
                         {paymentLabels[order.paymentMethod]}
                       </span>
                     </div>
                     {order.note && (
                       <div>
-                        <span style={{ color: '#999' }}>Ghi chú: </span>
-                        <span style={{ color: '#333', fontStyle: 'italic' }}>
-                          {order.note}
-                        </span>
+                        <span className="orders-shipping-muted">Ghi chú: </span>
+                        <span className="orders-shipping-note">{order.note}</span>
                       </div>
                     )}
                   </div>
 
-                  <div
-                    style={{
-                      textAlign: 'right',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>
-                      Tổng cộng
-                    </div>
-                    <div
-                      style={{
-                        fontSize: 24,
-                        fontWeight: 800,
-                        color: '#e04949',
-                      }}
-                    >
+                  <div className="orders-total">
+                    <div className="orders-total-label">Tổng cộng</div>
+                    <div className="orders-total-value">
                       {Number(order.totalAmount).toLocaleString('vi-VN')}đ
                     </div>
                   </div>

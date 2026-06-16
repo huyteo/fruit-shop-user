@@ -1,11 +1,14 @@
+import { useBreakpoint } from '../utils/useBreakpoint';
+
 export default function FooterSection() {
+  const { isMobile, isTablet } = useBreakpoint();
   return (
     <footer>
       {/* Main Footer */}
       <div
         style={{
           background: 'linear-gradient(180deg, #0a1628 0%, #0d1f3c 100%)',
-          padding: '56px 48px 0',
+          padding: isMobile ? '40px 20px 0' : isTablet ? '48px 32px 0' : '56px 48px 0',
           color: '#fff',
         }}
       >
@@ -14,8 +17,8 @@ export default function FooterSection() {
             maxWidth: 1200,
             margin: '0 auto',
             display: 'grid',
-            gridTemplateColumns: '1.4fr 1fr 1fr 1fr',
-            gap: 40,
+            gridTemplateColumns: isMobile ? '1fr' : isTablet ? '1fr 1fr' : '1.4fr 1fr 1fr 1fr',
+            gap: isMobile ? 32 : 40,
           }}
         >
           {/* Brand */}
