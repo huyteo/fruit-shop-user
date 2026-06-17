@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Input, Button, Spin, message as antdMessage, Image } from 'antd';
+import { Input, Button, Spin, message as antdMessage, Image, Modal } from 'antd';
 import {
   SendOutlined,
   RobotOutlined,
@@ -9,9 +9,10 @@ import {
   DownOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate  } from 'react-router-dom';
 import { getImageUrl } from '../utils/image';
 import axiosClient from '../api/axiosClient';
+import { useAuth } from '../contexts/useAuth';
 
 
 const { TextArea } = Input;
@@ -34,6 +35,8 @@ const quickQuestions = [
 export default function ChatWidget() {
   const location = useLocation();
   const hideOn = ['/login', '/register'];
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -94,6 +97,7 @@ export default function ChatWidget() {
     if (file) uploadAndSendImage(file);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
+  
 
   const uploadAndSendImage = async (file: File) => {
     const tempId = Date.now();
@@ -158,6 +162,21 @@ export default function ChatWidget() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleToggleChat = () => {
+    if (!open && !isAuthenticated) {
+      Modal.confirm({
+        title: 'Bạn cần đăng nhập',
+        content: 'Vui lòng đăng nhập để sử dụng chat tư vấn.',
+        okText: 'Đăng nhập',
+        cancelText: 'Để sau',
+        okButtonProps: { style: { background: '#00a63e', borderColor: '#00a63e' } },
+        onOk: () => navigate('/login'),
+      });
+      return;
+    }
+    setOpen((v) => !v);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -327,7 +346,7 @@ export default function ChatWidget() {
             />
             <Button
               type="primary"
-              icon={<SendOutlined />}
+              icon={<SendOutlined style={{ color: '#fff' }} />}
               onClick={sendMessage}
               disabled={loading || !input.trim()}
               style={styles.sendBtn}
@@ -338,7 +357,7 @@ export default function ChatWidget() {
 
       {/* ── NÚT TRÒN: đóng thì mở chat, mở thì thu lại (đổi icon) ── */}
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={handleToggleChat}
         style={styles.fab}
         aria-label={open ? 'Thu nhỏ chat' : 'Mở chat tư vấn'}
         onMouseEnter={(e) => {
@@ -375,7 +394,7 @@ export default function ChatWidget() {
 const styles: { [key: string]: React.CSSProperties } = {
   fab: {
     position: 'fixed',
-    bottom: 70,
+    bottom: 36,
     right: 24,
     width: 60,
     height: 60,

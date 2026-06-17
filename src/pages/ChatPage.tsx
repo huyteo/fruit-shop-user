@@ -188,7 +188,6 @@ export default function ChatPage() {
                   </div>
                 )}
                 
-                {/* ✅ SỬA: Wrapper với flexDirection và alignItems */}
                 <div style={{ 
                   maxWidth: '70%',
                   display: 'flex',
@@ -291,7 +290,6 @@ export default function ChatPage() {
   );
 }
 
-// ✅ Styles
 const styles: { [key: string]: React.CSSProperties } = {
   pageContainer: {
     minHeight: 'calc(100vh - 140px)',
@@ -395,7 +393,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     lineHeight: '1.6',
     fontSize: '15px',
   },
-  // ✅ THÊM: Styles cho ảnh
   messageImage: {
     width: '240px',
     height: 'auto',
@@ -434,7 +431,6 @@ const styles: { [key: string]: React.CSSProperties } = {
     borderRadius: '20px',
     flex: 1,
   },
-  // ✅ THÊM: Image button
   imageButton: {
     borderRadius: '50%',
     width: '44px',
