@@ -9,7 +9,9 @@ import {
   DownOutlined,
   CloseOutlined,
 } from '@ant-design/icons';
+import { useLocation } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
+
 
 const { TextArea } = Input;
 
@@ -29,6 +31,8 @@ const quickQuestions = [
 ];
 
 export default function ChatWidget() {
+  const location = useLocation();
+  const hideOn = ['/login', '/register'];
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -161,6 +165,8 @@ export default function ChatWidget() {
       sendMessage();
     }
   };
+
+  if (hideOn.includes(location.pathname)) return null;
 
   return (
     <>
@@ -366,7 +372,6 @@ export default function ChatWidget() {
 }
 
 const styles: { [key: string]: React.CSSProperties } = {
-  // Nút tròn nổi
   fab: {
     position: 'fixed',
     bottom: 70,

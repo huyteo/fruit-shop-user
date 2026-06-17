@@ -1,0 +1,353 @@
+/* ===== RegisterPage (Halona) ===== */
+
+.reg-wrap {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.reg-shell {
+  width: 100%;
+  max-width: 940px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #fff;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(16, 64, 32, 0.16);
+}
+
+/* ----- Panel trái (thương hiệu) ----- */
+.reg-aside {
+  position: relative;
+  padding: 48px 44px;
+  background: linear-gradient(150deg, #1b5e20 0%, #00a63e 60%, #43c264 100%);
+  color: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.reg-aside-deco {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.reg-aside-deco--1 { width: 240px; height: 240px; top: -90px; right: -70px; }
+.reg-aside-deco--2 { width: 130px; height: 130px; bottom: -40px; left: -30px; }
+
+/* viền nét đứt — signature */
+.reg-aside-frame {
+  position: absolute;
+  inset: 16px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.28);
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.reg-fruit {
+  position: absolute;
+  font-size: 30px;
+  opacity: 0.85;
+  animation: regFloat 5s ease-in-out infinite;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes regFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-14px) rotate(8deg); }
+}
+
+.reg-brand {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: auto;
+}
+
+.reg-brand-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.reg-brand-name {
+  font-family: 'Georgia', serif;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+}
+
+/* ----- Con dấu nông trại (lấp khoảng giữa) ----- */
+.reg-stamp {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 14px;
+  backdrop-filter: blur(4px);
+  max-width: 280px;
+}
+
+.reg-stamp-seal {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1.5px dashed rgba(255, 255, 255, 0.55);
+}
+
+.reg-stamp-seal-icon {
+  font-size: 20px;
+}
+
+.reg-stamp-title {
+  font-family: 'Georgia', serif;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.reg-stamp-sub {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.78);
+  margin-top: 2px;
+}
+
+.reg-chips {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.reg-chip {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+
+.reg-aside-body {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  padding-top: 22px;
+}
+
+.reg-aside-title {
+  font-family: emoji;
+  font-size: 35px;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0 0 14px;
+}
+
+.reg-aside-sub {
+  font-size: 14px;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.82);
+  margin: 0 0 26px;
+  max-width: 300px;
+}
+
+.reg-perks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.reg-perk {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.reg-perk-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* ----- Panel phải (form) ----- */
+.reg-main {
+  padding: 48px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.reg-head {
+  margin-bottom: 26px;
+}
+
+.reg-title {
+  font-family: 'Georgia', serif;
+  font-size: 26px;
+  font-weight: 800;
+  color: #1a2b1f;
+  margin: 0 0 6px;
+}
+
+.reg-subtitle {
+  font-size: 14px;
+  color: #7a8a80;
+  margin: 0;
+}
+
+/* Ant Form tinh chỉnh nhẹ */
+.reg-main .ant-input-affix-wrapper {
+  border-radius: 12px;
+  padding: 11px 14px;
+  border-color: #e3eae5;
+  background: #f7faf8;
+  transition: all 0.2s;
+}
+
+.reg-main .ant-input-affix-wrapper:hover,
+.reg-main .ant-input-affix-wrapper-focused {
+  border-color: #00a63e;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(0, 166, 62, 0.08);
+}
+
+.reg-main .ant-input-affix-wrapper .anticon {
+  color: #9fb0a5;
+}
+
+.reg-submit {
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #00a63e, #1b5e20) !important;
+  border: none !important;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0, 166, 62, 0.28);
+}
+
+.reg-submit:hover {
+  filter: brightness(1.05);
+}
+
+.reg-divider {
+  color: #aab7af !important;
+  font-size: 13px !important;
+}
+
+.reg-foot {
+  text-align: center;
+  font-size: 14px;
+  color: #6c7d72;
+}
+
+.reg-foot a {
+  color: #00a63e;
+  font-weight: 700;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 767px) {
+  .reg-wrap {
+    padding: 16px;
+    min-height: auto;
+  }
+
+  .reg-shell {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+    border-radius: 20px;
+  }
+
+  /* Panel co thành header gọn phía trên */
+  .reg-aside {
+    padding: 28px 28px 24px;
+  }
+
+  .reg-aside-frame {
+    inset: 10px;
+  }
+
+  .reg-brand {
+    margin-bottom: 18px;
+  }
+
+  .reg-aside-body {
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  /* mobile gọn: ẩn con dấu + chips để header không quá cao */
+  .reg-stamp,
+  .reg-chips {
+    display: none;
+  }
+
+  .reg-aside-title {
+    font-size: 22px;
+    margin-bottom: 8px;
+  }
+
+  .reg-aside-sub {
+    margin-bottom: 16px;
+    max-width: none;
+  }
+
+  /* mobile gọn: chỉ giữ 1 dòng cam kết tránh dài lê thê */
+  .reg-perk:nth-child(n + 2) {
+    display: none;
+  }
+
+  .reg-fruit {
+    font-size: 24px;
+  }
+
+  .reg-main {
+    padding: 28px 28px 32px;
+  }
+
+  .reg-title {
+    font-size: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reg-fruit {
+    animation: none;
+  }
+}
