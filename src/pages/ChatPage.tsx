@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Input, Button, Spin, message as antdMessage, Image } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, PictureOutlined } from '@ant-design/icons';
+import { getImageUrl } from '../utils/image';
 import axiosClient from '../api/axiosClient';
 
 const { TextArea } = Input;
@@ -100,7 +101,7 @@ export default function ChatPage() {
       });
 
       const imageUrl = uploadRes.data.url;
-      const fullImageUrl = `http://192.168.100.31:3000${imageUrl}`;
+      const fullImageUrl = getImageUrl(imageUrl);
 
       setMessages(prev =>
         prev.map(msg =>
