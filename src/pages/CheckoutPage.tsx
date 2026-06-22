@@ -98,6 +98,33 @@ export default function CheckoutPage() {
     );
   }
 
+  // Chỉ cho phép nhập số vào ô số điện thoại (chặn ngay khi gõ)
+  const handlePhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const allowedKeys = [
+      'Backspace',
+      'Delete',
+      'ArrowLeft',
+      'ArrowRight',
+      'ArrowUp',
+      'ArrowDown',
+      'Tab',
+      'Home',
+      'End',
+    ];
+    if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) {
+      return;
+    }
+    if (!/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  // Lọc bỏ ký tự không phải số khi paste / nhập, đồng thời giới hạn 10 ký tự
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
+    form.setFieldsValue({ shippingPhone: digitsOnly });
+  };
+
   const handleSubmit = async (values: {
     receiverName: string;
     shippingPhone: string;
@@ -106,9 +133,7 @@ export default function CheckoutPage() {
     note?: string;
   }) => {
     if (!values.shippingPhone?.trim() || !values.shippingAddress?.trim()) {
-      message.warning(
-        'Bạn chưa có số điện thoại hoặc địa chỉ. Vui lòng cập nhật trong trang Hồ sơ trước khi đặt hàng.',
-      );
+      message.warning('Vui lòng nhập đầy đủ số điện thoại và địa chỉ giao hàng.');
       return;
     }
 
@@ -181,86 +206,89 @@ export default function CheckoutPage() {
                   <Spin />
                 </div>
               ) : (
-                <>
-                  <div className="co-info-banner">
-                    ℹ️ Thông tin được lấy từ hồ sơ của bạn. Muốn thay đổi, vui lòng cập nhật trong{' '}
-                    <a className="co-info-link" onClick={() => navigate('/profile')}>
-                      trang Hồ sơ
-                    </a>
-                    .
-                  </div>
-
-                  <Form
-                    form={form}
-                    layout="vertical"
-                    onFinish={handleSubmit}
-                    initialValues={{ paymentMethod: 'cod' }}
-                    className="co-form"
+                <Form
+                  form={form}
+                  layout="vertical"
+                  onFinish={handleSubmit}
+                  initialValues={{ paymentMethod: 'cod' }}
+                  className="co-form"
+                >
+                  <Form.Item
+                    name="receiverName"
+                    label="Tên người nhận"
+                    rules={[{ required: true, message: 'Vui lòng nhập tên người nhận!' }]}
                   >
-                    <Form.Item
-                      name="receiverName"
-                      label="Tên người nhận"
-                      rules={[{ required: true, message: 'Vui lòng nhập tên người nhận!' }]}
-                    >
-                      <Input placeholder="Nguyễn Văn A" size="large" readOnly />
-                    </Form.Item>
+                    <Input placeholder="Nguyễn Văn A" size="large" />
+                  </Form.Item>
 
-                    <Form.Item
-                      name="shippingPhone"
-                      label="Số điện thoại"
-                      rules={[{ required: true, message: 'Vui lòng nhập số điện thoại!' }]}
-                    >
-                      <Input placeholder="Chưa có trong hồ sơ" size="large" readOnly />
-                    </Form.Item>
-
-                    <Form.Item
-                      name="shippingAddress"
-                      label="Địa chỉ giao hàng"
-                      rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
-                    >
-                      <Input.TextArea rows={2} placeholder="Chưa có trong hồ sơ" readOnly />
-                    </Form.Item>
-
-                    <Form.Item
-                      name="paymentMethod"
-                      label="Phương thức thanh toán"
-                      rules={[{ required: true }]}
-                    >
-                      <Radio.Group className="co-pay-group">
-                        <Radio value="cod" className="co-pay-option">
-                          <span className="co-pay-label">
-                            <span className="co-pay-emoji">💵</span>
-                            Thanh toán khi nhận hàng (COD)
-                          </span>
-                        </Radio>
-                        <Radio value="momo" className="co-pay-option">
-                          <span className="co-pay-label">
-                            <span className="co-pay-emoji">📱</span>
-                            Thanh toán qua MoMo
-                          </span>
-                        </Radio>
-                      </Radio.Group>
-                    </Form.Item>
-
-                    <Form.Item name="note" label="Ghi chú">
-                      <Input.TextArea
-                        rows={2}
-                        placeholder="Ghi chú cho đơn hàng (không bắt buộc)"
-                      />
-                    </Form.Item>
-
-                    <Button
-                      type="primary"
-                      htmlType="submit"
+                  <Form.Item
+                    name="shippingPhone"
+                    label="Số điện thoại"
+                    rules={[
+                      { required: true, message: 'Vui lòng nhập số điện thoại!' },
+                      {
+                        pattern: /^0[0-9]{9}$/,
+                        message: 'Số điện thoại phải gồm 10 số và bắt đầu bằng 0!',
+                      },
+                    ]}
+                  >
+                    <Input
+                      placeholder="VD: 0912345678"
                       size="large"
-                      block
-                      loading={loading}
-                      className="co-submit"
-                    >
-                      Xác nhận đặt hàng
-                    </Button>
-                  </Form>
-                </>
+                      inputMode="numeric"
+                      maxLength={10}
+                      onKeyDown={handlePhoneKeyDown}
+                      onChange={handlePhoneChange}
+                    />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="shippingAddress"
+                    label="Địa chỉ giao hàng"
+                    rules={[{ required: true, message: 'Vui lòng nhập địa chỉ!' }]}
+                  >
+                    <Input.TextArea rows={2} placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành" />
+                  </Form.Item>
+
+                  <Form.Item
+                    name="paymentMethod"
+                    label="Phương thức thanh toán"
+                    rules={[{ required: true }]}
+                  >
+                    <Radio.Group className="co-pay-group">
+                      <Radio value="cod" className="co-pay-option">
+                        <span className="co-pay-label">
+                          <span className="co-pay-emoji">💵</span>
+                          Thanh toán khi nhận hàng (COD)
+                        </span>
+                      </Radio>
+                      <Radio value="momo" className="co-pay-option">
+                        <span className="co-pay-label">
+                          <span className="co-pay-emoji">📱</span>
+                          Thanh toán qua MoMo
+                        </span>
+                      </Radio>
+                    </Radio.Group>
+                  </Form.Item>
+
+                  <Form.Item name="note" label="Ghi chú">
+                    <Input.TextArea
+                      rows={2}
+                      placeholder="Ghi chú cho đơn hàng (không bắt buộc)"
+                    />
+                  </Form.Item>
+
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    size="large"
+                    block
+                    loading={loading}
+                    className="co-submit"
+                  >
+                    Xác nhận đặt hàng
+                  </Button>
+                </Form>
               )}
             </div>
           </div>

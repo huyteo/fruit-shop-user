@@ -79,7 +79,7 @@ const slides = [
     title2: 'Nhiệt Đới',
     highlight: 'Đặc Biệt',
     subtitle: 'Xoài, thanh long, vải thiều… Tươi ngon từ các vùng nổi tiếng nhất cả nước.',
-    cta: 'Xem Nhiệt Đới',
+    cta: 'Xem Chi Tiết',
   },
   {
     image: 'https://images.pexels.com/photos/1132047/pexels-photo-1132047.jpeg',

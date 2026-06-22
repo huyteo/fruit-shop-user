@@ -102,6 +102,22 @@ const vietnamData: Province[] = [
   },
 ];
 
+// SĐT Việt Nam: bắt đầu bằng 0, đủ 10 số
+const PHONE_REGEX = /^0[0-9]{9}$/;
+
+// Chặn phím không phải số khi gõ (giữ Backspace, Delete, mũi tên, Tab...)
+const handlePhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const allowedKeys = [
+    'Backspace', 'Delete', 'ArrowLeft', 'ArrowRight',
+    'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End',
+  ];
+  if (allowedKeys.includes(e.key) || e.ctrlKey || e.metaKey) return;
+  if (!/^[0-9]$/.test(e.key)) e.preventDefault();
+};
+
+// Lọc ký tự không phải số (phòng trường hợp dán/paste), giới hạn 10 ký tự
+const sanitizePhoneValue = (value: string) => value.replace(/\D/g, '').slice(0, 10);
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -139,9 +155,25 @@ export default function ProfilePage() {
 
   const cancelEdit = () => { setEditingField(null); setEditValue(''); };
 
+  // Input onChange dùng chung cho field đang edit; tự lọc số nếu là field phone
+  const handleEditValueChange = (field: string, value: string) => {
+    if (field === 'phone') {
+      setEditValue(sanitizePhoneValue(value));
+    } else {
+      setEditValue(value);
+    }
+  };
+
   const saveField = async (field: string) => {
     if (field === 'name' && !editValue.trim()) { message.warning('Họ tên không được để trống'); return; }
     if (field === 'email' && !editValue.trim()) { message.warning('Email không được để trống'); return; }
+    if (field === 'phone') {
+      if (!editValue.trim()) { message.warning('Số điện thoại không được để trống'); return; }
+      if (!PHONE_REGEX.test(editValue.trim())) {
+        message.warning('Số điện thoại phải gồm 10 số và bắt đầu bằng 0!');
+        return;
+      }
+    }
     setSaving(true);
     try {
       await axiosClient.put(`/users/${user?.id}`, { [field]: editValue });
@@ -314,7 +346,12 @@ export default function ProfilePage() {
                 <div style={labelStyle}>{field.label}</div>
                 {editingField === field.key ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-                    <Input value={editValue} onChange={(e) => setEditValue(e.target.value)}
+                    <Input
+                      value={editValue}
+                      onChange={(e) => handleEditValueChange(field.key, e.target.value)}
+                      onKeyDown={field.key === 'phone' ? handlePhoneKeyDown : undefined}
+                      inputMode={field.key === 'phone' ? 'numeric' : undefined}
+                      maxLength={field.key === 'phone' ? 10 : undefined}
                       autoFocus onPressEnter={() => saveField(field.key)}
                       style={{ flex: 1, borderRadius: 8, borderColor: '#2ecc71' }} />
                     <Button type="primary" icon={<CheckOutlined />} size="small" loading={saving}
@@ -446,8 +483,24 @@ export default function ProfilePage() {
             <Form.Item name="receiverName" label={<span style={{ fontSize: 13, color: '#888' }}>Họ và tên</span>} style={{ flex: 1 }}>
               <Input size="large" style={{ borderRadius: 8 }} />
             </Form.Item>
-            <Form.Item name="receiverPhone" label={<span style={{ fontSize: 13, color: '#888' }}>Số điện thoại</span>} style={{ flex: 1 }}>
-              <Input size="large" style={{ borderRadius: 8 }} />
+            <Form.Item
+              name="receiverPhone"
+              label={<span style={{ fontSize: 13, color: '#888' }}>Số điện thoại</span>}
+              style={{ flex: 1 }}
+              rules={[
+                { required: true, message: 'Vui lòng nhập số điện thoại!' },
+                { pattern: PHONE_REGEX, message: 'SĐT phải gồm 10 số, bắt đầu bằng 0!' },
+              ]}
+              normalize={(value: string) => sanitizePhoneValue(value || '')}
+            >
+              <Input
+                size="large"
+                style={{ borderRadius: 8 }}
+                inputMode="numeric"
+                maxLength={10}
+                placeholder="VD: 0912345678"
+                onKeyDown={handlePhoneKeyDown}
+              />
             </Form.Item>
           </div>
           <div style={{ display: 'flex', gap: 10 }}>
