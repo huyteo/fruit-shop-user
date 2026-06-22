@@ -1,5 +1,4 @@
-/* ===== RegisterPage (Halona) ===== */
-
+/* ===== RegisterPage ===== */
 .reg-wrap {
   min-height: calc(100vh - 120px);
   display: flex;
@@ -91,7 +90,6 @@
   letter-spacing: -0.3px;
 }
 
-/* ----- Con dấu nông trại (lấp khoảng giữa) ----- */
 .reg-stamp {
   position: relative;
   z-index: 2;
@@ -205,7 +203,6 @@
   flex-shrink: 0;
 }
 
-/* ----- Panel phải (form) ----- */
 .reg-main {
   padding: 48px 44px;
   display: flex;
@@ -231,7 +228,6 @@
   margin: 0;
 }
 
-/* Ant Form tinh chỉnh nhẹ */
 .reg-main .ant-input-affix-wrapper {
   border-radius: 12px;
   padding: 11px 14px;
@@ -294,7 +290,6 @@
     border-radius: 20px;
   }
 
-  /* Panel co thành header gọn phía trên */
   .reg-aside {
     padding: 28px 28px 24px;
   }
@@ -312,7 +307,6 @@
     padding-top: 0;
   }
 
-  /* mobile gọn: ẩn con dấu + chips để header không quá cao */
   .reg-stamp,
   .reg-chips {
     display: none;
@@ -328,7 +322,6 @@
     max-width: none;
   }
 
-  /* mobile gọn: chỉ giữ 1 dòng cam kết tránh dài lê thê */
   .reg-perk:nth-child(n + 2) {
     display: none;
   }

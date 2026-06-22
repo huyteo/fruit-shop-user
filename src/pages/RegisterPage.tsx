@@ -50,7 +50,6 @@ export default function RegisterPage() {
   return (
     <div className="reg-wrap">
       <div className="reg-shell">
-        {/* Panel thương hiệu */}
         <aside className="reg-aside">
           <div className="reg-aside-deco reg-aside-deco--1" />
           <div className="reg-aside-deco reg-aside-deco--2" />
