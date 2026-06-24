@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { useBreakpoint } from '../utils/useBreakpoint';
 import Navbar from './Navbar';
 import FooterSection from './FooterSection';
@@ -7,6 +7,8 @@ import ChatWidget from './ChatWidget';
 
 export default function UserLayout() {
   const { isSmallMobile } = useBreakpoint();
+  const location = useLocation();
+  const isChatPage = location.pathname === '/chat';
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -17,7 +19,7 @@ export default function UserLayout() {
 
       {isSmallMobile ? <MobileFooter /> : <FooterSection />}
 
-      <ChatWidget />
+      {!isChatPage && <ChatWidget />}
     </div>
   );
 }

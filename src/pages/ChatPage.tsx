@@ -3,6 +3,7 @@ import { Input, Button, Spin, message as antdMessage, Image } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, PictureOutlined } from '@ant-design/icons';
 import { getImageUrl } from '../utils/image';
 import axiosClient from '../api/axiosClient';
+import '../styles/ChatPage.css';
 
 const { TextArea } = Input;
 
@@ -42,12 +43,12 @@ export default function ChatPage() {
   const sendMessage = async () => {
     if (!input.trim()) return;
 
-    const userMsg: Message = { 
-      role: 'user', 
-      content: input, 
-      id: Date.now() 
+    const userMsg: Message = {
+      role: 'user',
+      content: input,
+      id: Date.now(),
     };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
 
@@ -56,9 +57,9 @@ export default function ChatPage() {
       const aiMsg: Message = {
         role: 'assistant',
         content: res.data.aiResponse,
-        id: Date.now() + 1
+        id: Date.now() + 1,
       };
-      setMessages(prev => [...prev, aiMsg]);
+      setMessages((prev) => [...prev, aiMsg]);
     } catch (err) {
       console.error(err);
       antdMessage.error('AI Server không phản hồi');
@@ -80,14 +81,14 @@ export default function ChatPage() {
   const uploadAndSendImage = async (file: File) => {
     const tempId = Date.now();
     const previewUrl = URL.createObjectURL(file);
-    
+
     const userMsg: Message = {
       role: 'user',
       content: '📷 Đang tải ảnh lên...',
       image: previewUrl,
-      id: tempId
+      id: tempId,
     };
-    setMessages(prev => [...prev, userMsg]);
+    setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
 
     try {
@@ -103,12 +104,12 @@ export default function ChatPage() {
       const imageUrl = uploadRes.data.url;
       const fullImageUrl = getImageUrl(imageUrl);
 
-      setMessages(prev =>
-        prev.map(msg =>
+      setMessages((prev) =>
+        prev.map((msg) =>
           msg.id === tempId
             ? { ...msg, image: fullImageUrl, content: '📷 Đã gửi ảnh' }
-            : msg
-        )
+            : msg,
+        ),
       );
 
       const res = await axiosClient.post('/chat/message', {
@@ -122,22 +123,22 @@ export default function ChatPage() {
         id: Date.now() + 1,
         createdAt: new Date().toISOString(),
       };
-      setMessages(prev => [...prev, aiMsg]);
+      setMessages((prev) => [...prev, aiMsg]);
 
       URL.revokeObjectURL(previewUrl);
     } catch (err) {
       console.error('Upload error:', err);
       antdMessage.error('Không thể gửi ảnh');
-      
-      setMessages(prev => prev.filter(msg => msg.id !== tempId));
-      
+
+      setMessages((prev) => prev.filter((msg) => msg.id !== tempId));
+
       const errorMsg: Message = {
         role: 'assistant',
         content: '⚠️ Xin lỗi, không thể gửi ảnh. Vui lòng thử lại.',
         id: Date.now() + 1,
       };
-      setMessages(prev => [...prev, errorMsg]);
-      
+      setMessages((prev) => [...prev, errorMsg]);
+
       URL.revokeObjectURL(previewUrl);
     } finally {
       setLoading(false);
@@ -156,87 +157,66 @@ export default function ChatPage() {
   };
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.chatContainer}>
-        <div style={styles.header}>
-          <h2 style={styles.headerTitle}>Chat Tư Vấn 🍒</h2>
-          <p style={styles.headerSubtitle}>Halona Fruits Assistant</p>
+    <div className="cp-page">
+      <div className="cp-container">
+        {/* Header */}
+        <div className="cp-header">
+          <div className="cp-header-avatar">
+            <RobotOutlined />
+          </div>
+          <div className="cp-header-info">
+            <h2 className="cp-header-title">Chat Tư Vấn 🍒</h2>
+            <p className="cp-header-subtitle">Halona Fruits Assistant</p>
+          </div>
+          <div className="cp-header-status">
+            <span className="cp-header-status-dot" />
+            Online
+          </div>
         </div>
 
-        <div style={styles.messagesContainer}>
+        {/* Messages */}
+        <div className="cp-messages">
           {messages.length === 0 ? (
-            <div style={styles.emptyState}>
-              <RobotOutlined style={styles.emptyIcon} />
-              <p style={styles.emptyText}>
-                Xin chào! Tôi là trợ lý ảo của Halona Fruits. 
+            <div className="cp-empty">
+              <RobotOutlined className="cp-empty-icon" />
+              <p className="cp-empty-text">
+                Xin chào! Tôi là trợ lý ảo của Halona Fruits.
                 <br />
                 Bạn cần tư vấn gì về trái cây ạ?
               </p>
             </div>
           ) : (
-            messages.map(msg => (
-              <div 
-                key={msg.id} 
-                style={{
-                  ...styles.messageWrapper,
-                  justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start'
-                }}
+            messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`cp-message-row cp-message-row--${msg.role}`}
               >
                 {msg.role === 'assistant' && (
-                  <div style={styles.aiIconWrapper}>
+                  <div className="cp-avatar cp-avatar--assistant">
                     <RobotOutlined />
                   </div>
                 )}
-                
-                <div style={{ 
-                  maxWidth: '70%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                }}>
+
+                <div className={`cp-message-content cp-message-content--${msg.role}`}>
                   {msg.image && (
                     <Image
                       src={msg.image}
                       alt="Uploaded"
-                      style={{
-                        width: '240px',
-                        height: 'auto',
-                        maxHeight: '300px',
-                        objectFit: 'cover',
-                        borderRadius: '12px',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        display: 'block',
-                        marginBottom: '8px',
-                      }}
+                      className="cp-message-image"
                       preview={{
-                        mask: (
-                          <div style={{ 
-                            background: 'rgba(0, 0, 0, 0.5)',
-                            color: 'white',
-                            padding: '8px 16px',
-                            borderRadius: '4px',
-                            fontSize: '14px',
-                          }}>
-                            🔍 Xem ảnh
-                          </div>
-                        ),
+                        mask: <div className="cp-image-preview-mask">🔍 Xem ảnh</div>,
                       }}
                     />
                   )}
                   {msg.content && (
-                    <div 
-                      style={{
-                        ...styles.messageBubble,
-                        ...(msg.role === 'user' ? styles.userBubble : styles.aiBubble)
-                      }}
-                    >
-                      <p style={styles.messageText}>{msg.content}</p>
+                    <div className={`cp-bubble cp-bubble--${msg.role}`}>
+                      <p className="cp-bubble-text">{msg.content}</p>
                     </div>
                   )}
                 </div>
 
                 {msg.role === 'user' && (
-                  <div style={styles.userIconWrapper}>
+                  <div className="cp-avatar cp-avatar--user">
                     <UserOutlined />
                   </div>
                 )}
@@ -244,15 +224,16 @@ export default function ChatPage() {
             ))
           )}
           {loading && (
-            <div style={styles.loadingWrapper}>
+            <div className="cp-loading">
               <Spin size="small" />
-              <span style={styles.loadingText}>Đang trả lời...</span>
+              <span className="cp-loading-text">Đang trả lời...</span>
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
 
-        <div style={styles.inputContainer}>
+        {/* Input bar */}
+        <div className="cp-input-bar">
           <input
             ref={fileInputRef}
             type="file"
@@ -260,195 +241,32 @@ export default function ChatPage() {
             style={{ display: 'none' }}
             onChange={handleImageSelect}
           />
-          
+
           <Button
             icon={<PictureOutlined />}
             onClick={() => fileInputRef.current?.click()}
             disabled={loading}
-            style={styles.imageButton}
+            className="cp-icon-btn"
             title="Gửi ảnh"
           />
 
           <TextArea
             value={input}
-            onChange={e => setInput(e.target.value)}
+            onChange={(e) => setInput(e.target.value)}
             placeholder="Nhập tin nhắn..."
             autoSize={{ minRows: 1, maxRows: 4 }}
             onKeyDown={handleKeyPress}
-            style={styles.textarea}
+            className="cp-textarea"
           />
           <Button
             type="primary"
             icon={<SendOutlined />}
             onClick={sendMessage}
             disabled={loading || !input.trim()}
-            style={styles.sendButton}
+            className="cp-send-btn"
           />
         </div>
       </div>
     </div>
   );
 }
-
-const styles: { [key: string]: React.CSSProperties } = {
-  pageContainer: {
-    minHeight: 'calc(100vh - 140px)',
-    padding: '24px',
-    background: '#f8f9fa',
-  },
-  chatContainer: {
-    maxWidth: '900px',
-    margin: '0 auto',
-    height: 'calc(100vh - 200px)',
-    display: 'flex',
-    flexDirection: 'column',
-    background: 'white',
-    borderRadius: '16px',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-    overflow: 'hidden',
-  },
-  header: {
-    background: 'linear-gradient(135deg, #1a7a3c, #2ecc71)',
-    color: 'white',
-    padding: '24px',
-  },
-  headerTitle: {
-    margin: 0,
-    fontSize: '24px',
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  headerSubtitle: {
-    margin: '4px 0 0',
-    opacity: 0.9,
-    fontSize: '14px',
-  },
-  messagesContainer: {
-    flex: 1,
-    overflowY: 'auto',
-    padding: '24px',
-    background: '#f8f9fa',
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '40px 20px',
-    color: '#999',
-  },
-  emptyIcon: {
-    fontSize: '48px',
-    marginBottom: '16px',
-    color: '#2ecc71',
-  },
-  emptyText: {
-    fontSize: '15px',
-    lineHeight: '1.6',
-    margin: 0,
-  },
-  messageWrapper: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '16px',
-    alignItems: 'flex-start',
-  },
-  aiIconWrapper: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '18px',
-    background: 'white',
-    color: '#2ecc71',
-    border: '2px solid #2ecc71',
-    flexShrink: 0,
-  },
-  userIconWrapper: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '18px',
-    background: '#2ecc71',
-    color: 'white',
-    flexShrink: 0,
-  },
-  messageBubble: {
-    padding: '12px 16px',
-    borderRadius: '16px',
-  },
-  userBubble: {
-    background: '#2ecc71',
-    color: 'white',
-  },
-  aiBubble: {
-    background: 'white',
-    color: '#333',
-    border: '1px solid #e0e0e0',
-  },
-  messageText: {
-    margin: 0,
-    lineHeight: '1.6',
-    fontSize: '15px',
-  },
-  messageImage: {
-    width: '240px',
-    height: 'auto',
-    maxHeight: '300px',
-    objectFit: 'cover',
-    borderRadius: '12px',
-    marginBottom: '8px',
-    cursor: 'pointer',
-    transition: 'transform 0.2s',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-  },
-  messageImageUser: {
-    alignSelf: 'flex-end',
-  },
-  messageImageAI: {
-    alignSelf: 'flex-start',
-  },
-  loadingWrapper: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px',
-    color: '#666',
-  },
-  loadingText: {
-    fontSize: '14px',
-  },
-  inputContainer: {
-    display: 'flex',
-    gap: '12px',
-    padding: '16px',
-    background: 'white',
-    borderTop: '1px solid #e0e0e0',
-  },
-  textarea: {
-    borderRadius: '20px',
-    flex: 1,
-  },
-  imageButton: {
-    borderRadius: '50%',
-    width: '44px',
-    height: '44px',
-    flexShrink: 0,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '20px',
-    color: '#2ecc71',
-    borderColor: '#2ecc71',
-  },
-  sendButton: {
-    borderRadius: '50%',
-    width: '44px',
-    height: '44px',
-    flexShrink: 0,
-    background: 'linear-gradient(135deg, #1a7a3c, #2ecc71)',
-    border: 'none',
-  },
-};

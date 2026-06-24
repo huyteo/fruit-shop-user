@@ -311,7 +311,7 @@
     width: calc(100vw - 24px);
     right: 12px;
     bottom: 122px;
-    height: calc(98vh - 160px);
+    height: calc(100vh - 220px);
   }
 
   .cw-fab {

@@ -503,6 +503,9 @@ export default function ProfilePage() {
               />
             </Form.Item>
           </div>
+
+          {/* Tỉnh/TP + Quận/Huyện ở 1 dòng; Phường/Xã xuống dòng riêng để không bị tràn ra ngoài modal,
+              vì tên Phường/Xã thường dài hơn (ví dụ "Phường Hiệp Bình Chánh") */}
           <div style={{ display: 'flex', gap: 10 }}>
             <Form.Item name="city" label={<span style={{ fontSize: 13, color: '#888' }}>Tỉnh/TP</span>} style={{ flex: 1 }} rules={[{ required: true, message: 'Chọn tỉnh/TP' }]}>
               <Select placeholder="Chọn Tỉnh/TP" size="large" showSearch optionFilterProp="children"
@@ -516,12 +519,14 @@ export default function ProfilePage() {
                 {(vietnamData.find((p) => p.name === selectedCity)?.districts || []).map((d) => <Select.Option key={d.name} value={d.name}>{d.name}</Select.Option>)}
               </Select>
             </Form.Item>
-            <Form.Item name="ward" label={<span style={{ fontSize: 13, color: '#888' }}>Phường/Xã</span>} style={{ flex: 1 }} rules={[{ required: true, message: 'Chọn phường/xã' }]}>
-              <Select placeholder="Chọn Phường/Xã" size="large" showSearch optionFilterProp="children">
-                {(vietnamData.find((p) => p.name === selectedCity)?.districts.find((d) => d.name === selectedDistrict)?.wards || []).map((w) => <Select.Option key={w} value={w}>{w}</Select.Option>)}
-              </Select>
-            </Form.Item>
           </div>
+
+          <Form.Item name="ward" label={<span style={{ fontSize: 13, color: '#888' }}>Phường/Xã</span>} rules={[{ required: true, message: 'Chọn phường/xã' }]}>
+            <Select placeholder="Chọn Phường/Xã" size="large" showSearch optionFilterProp="children">
+              {(vietnamData.find((p) => p.name === selectedCity)?.districts.find((d) => d.name === selectedDistrict)?.wards || []).map((w) => <Select.Option key={w} value={w}>{w}</Select.Option>)}
+            </Select>
+          </Form.Item>
+
           <Form.Item name="street" label={<span style={{ fontSize: 13, color: '#888' }}>Địa chỉ cụ thể</span>} rules={[{ required: true, message: 'Vui lòng nhập địa chỉ cụ thể!' }]}>
             <Input.TextArea rows={2} placeholder="Số nhà, tên đường, tòa nhà..." style={{ borderRadius: 8, resize: 'none' }} />
           </Form.Item>

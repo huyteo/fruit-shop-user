@@ -223,9 +223,9 @@ export default function FooterSection() {
               />
             </h4>
             {[
-              { icon: '📍', text: '123 Đường Trái Cây, Quận 1, TP.HCM' },
-              { icon: '📞', text: '1900 xxxx' },
-              { icon: '✉️', text: 'hello@halona.vn' },
+              { icon: '📍', text: '53 Nguyễn Minh Châu, Ngũ Hành Sơn, TP.ĐN' },
+              { icon: '📞', text: '0376410304' },
+              { icon: '✉️', text: 'huyteo1003@gmail.com' },
               { icon: '🕐', text: 'T2 - CN: 7:00 - 21:00' },
             ].map((item) => (
               <div
