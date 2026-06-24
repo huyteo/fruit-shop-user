@@ -308,10 +308,10 @@
 /* ===== Responsive ===== */
 @media (max-width: 479px) {
   .cw-widget {
-    width: calc(100vw - 24px);
+    width: calc(100vw - 32px);
     right: 12px;
     bottom: 122px;
-    height: calc(100vh - 220px);
+    height: calc(100vh - 240px);
   }
 
   .cw-fab {
