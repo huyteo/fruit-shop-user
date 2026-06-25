@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   Button,
   Typography,
-  Popconfirm,
+  Modal,
   message,
 } from 'antd';
 import {
@@ -138,17 +138,22 @@ export default function CartPage() {
                 : `Chọn tất cả (${items.length})`}
             </Text>
             {selectedCount > 0 && (
-              <Popconfirm
-                title={`Xóa ${selectedCount} sản phẩm đã chọn?`}
-                onConfirm={handleDeleteSelected}
-                okText="Xóa"
-                cancelText="Hủy"
-              >
-                <span className="cart-del-selected">
-                  <DeleteOutlined /> Xóa ({selectedCount})
-                </span>
-              </Popconfirm>
-            )}
+            <span
+              className="cart-del-selected"
+              onClick={() => {
+                Modal.confirm({
+                  title: `Xóa ${selectedCount} sản phẩm đã chọn?`,
+                  content: 'Các sản phẩm này sẽ bị xóa khỏi giỏ hàng.',
+                  okText: 'Xóa',
+                  cancelText: 'Hủy',
+                  okButtonProps: { danger: true },
+                  onOk: handleDeleteSelected,
+                });
+              }}
+            >
+              <DeleteOutlined /> Xóa ({selectedCount})
+            </span>
+          )}
           </div>
 
           {/* ===== Items ===== */}
@@ -202,24 +207,25 @@ export default function CartPage() {
                         >
                           {item.name}
                         </span>
-                        <Popconfirm
-                          title="Xóa sản phẩm này?"
-                          onConfirm={() => {
-                            removeFromCart(item.productId);
-                            setSelectedIds((prev) =>
-                              prev.filter((id) => id !== item.productId),
-                            );
+                        <button
+                          className="cart-item-remove"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            Modal.confirm({
+                              title: 'Xóa sản phẩm này?',
+                              content: `Bạn có chắc muốn xóa "${item.name}" khỏi giỏ hàng?`,
+                              okText: 'Xóa',
+                              cancelText: 'Hủy',
+                              okButtonProps: { danger: true },
+                              onOk: () => {
+                                removeFromCart(item.productId);
+                                setSelectedIds((prev) => prev.filter((id) => id !== item.productId));
+                              },
+                            });
                           }}
-                          okText="Xóa"
-                          cancelText="Hủy"
                         >
-                          <button
-                            className="cart-item-remove"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <CloseOutlined />
-                          </button>
-                        </Popconfirm>
+                          <CloseOutlined />
+                        </button>
                       </div>
 
                       <span className="cart-price-pill">
@@ -279,19 +285,24 @@ export default function CartPage() {
             >
               Tiếp tục mua sắm
             </Button>
-            <Popconfirm
-              title="Xóa toàn bộ giỏ hàng?"
-              onConfirm={() => {
-                clearCart();
-                setSelectedIds([]);
+            <Button
+              className="cart-btn-rounded"
+              onClick={() => {
+                Modal.confirm({
+                  title: 'Xóa toàn bộ giỏ hàng?',
+                  content: 'Toàn bộ sản phẩm trong giỏ hàng sẽ bị xóa, không thể hoàn tác.',
+                  okText: 'Xóa hết',
+                  cancelText: 'Hủy',
+                  okButtonProps: { danger: true },
+                  onOk: () => {
+                    clearCart();
+                    setSelectedIds([]);
+                  },
+                });
               }}
-              okText="Xóa hết"
-              cancelText="Hủy"
             >
-              <Button className="cart-btn-rounded">
-                Xóa toàn bộ giỏ hàng
-              </Button>
-            </Popconfirm>
+              Xóa toàn bộ giỏ hàng
+            </Button>
           </div>
         </div>
 
