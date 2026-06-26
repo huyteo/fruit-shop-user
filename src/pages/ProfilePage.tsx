@@ -14,6 +14,9 @@ import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import { useAuth } from '../contexts/useAuth';
 import { getImageUrl } from '../utils/image';
+// ✅ Dữ liệu 34 tỉnh/thành + 3.321 phường/xã (đơn vị hành chính mới, hiệu lực từ 01/07/2025)
+// Đã bỏ cấp Quận/Huyện — chỉ còn 2 cấp: Tỉnh/Thành phố -> Phường/Xã
+import vietnamProvincesWards from '../assets/data/vietnamProvincesWards.json';
 
 interface UserProfile {
   id: number;
@@ -26,81 +29,10 @@ interface UserProfile {
   createdAt: string;
 }
 
-interface District { name: string; wards: string[]; }
-interface Province { name: string; districts: District[]; }
+interface Province { name: string; wards: string[]; }
 
-const vietnamData: Province[] = [
-  {
-    name: 'TP. Hồ Chí Minh',
-    districts: [
-      { name: 'Quận 1', wards: ['Phường Bến Nghé', 'Phường Bến Thành', 'Phường Cầu Kho', 'Phường Cô Giang', 'Phường Đa Kao', 'Phường Nguyễn Cư Trinh', 'Phường Nguyễn Thái Bình', 'Phường Phạm Ngũ Lão', 'Phường Tân Định'] },
-      { name: 'Quận 2', wards: ['Phường An Khánh', 'Phường An Lợi Đông', 'Phường An Phú', 'Phường Bình An', 'Phường Bình Khánh', 'Phường Bình Trưng Đông', 'Phường Bình Trưng Tây', 'Phường Cát Lái', 'Phường Thạnh Mỹ Lợi', 'Phường Thảo Điền'] },
-      { name: 'Quận 3', wards: ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14', 'Phường Võ Thị Sáu'] },
-      { name: 'Quận 7', wards: ['Phường Bình Thuận', 'Phường Phú Mỹ', 'Phường Phú Thuận', 'Phường Tân Hưng', 'Phường Tân Kiểng', 'Phường Tân Phong', 'Phường Tân Phú', 'Phường Tân Quy'] },
-      { name: 'Quận Bình Thạnh', wards: ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 11', 'Phường 12', 'Phường 13', 'Phường 14', 'Phường 15'] },
-      { name: 'Quận Gò Vấp', wards: ['Phường 1', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 9', 'Phường 10', 'Phường 11', 'Phường 12'] },
-      { name: 'Quận Tân Bình', wards: ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 6', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10'] },
-      { name: 'Quận Phú Nhuận', wards: ['Phường 1', 'Phường 2', 'Phường 3', 'Phường 4', 'Phường 5', 'Phường 7', 'Phường 8', 'Phường 9', 'Phường 10', 'Phường 11'] },
-      { name: 'Thủ Đức', wards: ['Phường Linh Trung', 'Phường Linh Xuân', 'Phường Linh Chiểu', 'Phường Linh Đông', 'Phường Linh Tây', 'Phường Trường Thọ', 'Phường Hiệp Bình Chánh', 'Phường Hiệp Bình Phước'] },
-    ],
-  },
-  {
-    name: 'Hà Nội',
-    districts: [
-      { name: 'Quận Ba Đình', wards: ['Phường Cống Vị', 'Phường Điện Biên', 'Phường Đội Cấn', 'Phường Giảng Võ', 'Phường Kim Mã', 'Phường Liễu Giai', 'Phường Ngọc Hà', 'Phường Ngọc Khánh', 'Phường Phúc Xá', 'Phường Quán Thánh'] },
-      { name: 'Quận Hoàn Kiếm', wards: ['Phường Chương Dương', 'Phường Cửa Đông', 'Phường Cửa Nam', 'Phường Đồng Xuân', 'Phường Hàng Bạc', 'Phường Hàng Bài', 'Phường Hàng Bồ', 'Phường Hàng Bông', 'Phường Hàng Buồm', 'Phường Hàng Đào'] },
-      { name: 'Quận Đống Đa', wards: ['Phường Cát Linh', 'Phường Hàng Bột', 'Phường Khâm Thiên', 'Phường Khương Thượng', 'Phường Kim Liên', 'Phường Láng Hạ', 'Phường Láng Thượng', 'Phường Nam Đồng', 'Phường Ngã Tư Sở'] },
-      { name: 'Quận Cầu Giấy', wards: ['Phường Dịch Vọng', 'Phường Dịch Vọng Hậu', 'Phường Mai Dịch', 'Phường Nghĩa Đô', 'Phường Nghĩa Tân', 'Phường Quan Hoa', 'Phường Trung Hòa', 'Phường Yên Hòa'] },
-      { name: 'Quận Thanh Xuân', wards: ['Phường Hạ Đình', 'Phường Khương Đình', 'Phường Khương Mai', 'Phường Khương Trung', 'Phường Kim Giang', 'Phường Nhân Chính', 'Phường Phương Liệt', 'Phường Thanh Xuân Bắc'] },
-    ],
-  },
-  {
-    name: 'Đà Nẵng',
-    districts: [
-      { name: 'Quận Hải Châu', wards: ['Phường Bình Hiên', 'Phường Bình Thuận', 'Phường Hải Châu I', 'Phường Hải Châu II', 'Phường Hòa Cường Bắc', 'Phường Hòa Cường Nam', 'Phường Hòa Thuận Đông', 'Phường Hòa Thuận Tây'] },
-      { name: 'Quận Thanh Khê', wards: ['Phường An Khê', 'Phường Chính Gián', 'Phường Hòa Khê', 'Phường Tam Thuận', 'Phường Tân Chính', 'Phường Thanh Khê Đông', 'Phường Thanh Khê Tây'] },
-      { name: 'Quận Sơn Trà', wards: ['Phường An Hải Bắc', 'Phường An Hải Đông', 'Phường An Hải Tây', 'Phường Mân Thái', 'Phường Nại Hiên Đông', 'Phường Phước Mỹ'] },
-    ],
-  },
-  {
-    name: 'Nghệ An',
-    districts: [
-      { name: 'TP. Vinh', wards: ['Phường Bến Thủy', 'Phường Cửa Nam', 'Phường Đội Cung', 'Phường Đông Vĩnh', 'Phường Hà Huy Tập', 'Phường Hồng Sơn', 'Phường Hưng Bình', 'Phường Hưng Dũng', 'Phường Lê Lợi', 'Phường Quang Trung'] },
-      { name: 'Huyện Nghĩa Đàn', wards: ['Xã Nghĩa An', 'Xã Nghĩa Bình', 'Xã Nghĩa Đức', 'Xã Nghĩa Hồng', 'Xã Nghĩa Khánh', 'Xã Nghĩa Lạc', 'Xã Nghĩa Lâm', 'Xã Nghĩa Liên', 'Xã Nghĩa Long', 'Thị trấn Nghĩa Đàn'] },
-      { name: 'Huyện Quỳnh Lưu', wards: ['Xã Quỳnh Bá', 'Xã Quỳnh Bảng', 'Xã Quỳnh Châu', 'Xã Quỳnh Diện', 'Xã Quỳnh Đôi', 'Xã Quỳnh Giang', 'Xã Quỳnh Hậu', 'Xã Quỳnh Hoa', 'Thị trấn Cầu Giát'] },
-      { name: 'Huyện Diễn Châu', wards: ['Xã Diễn An', 'Xã Diễn Hải', 'Xã Diễn Hoa', 'Xã Diễn Hoàng', 'Xã Diễn Hồng', 'Xã Diễn Lâm', 'Xã Diễn Ngọc', 'Xã Diễn Phong', 'Thị trấn Diễn Châu'] },
-    ],
-  },
-  {
-    name: 'Gia Lai',
-    districts: [
-      { name: 'TP. Pleiku', wards: ['Phường Chi Lăng', 'Phường Diên Hồng', 'Phường Đống Đa', 'Phường Hoa Lư', 'Phường Hội Phú', 'Phường Hội Thương', 'Phường Ia Kring', 'Phường Tây Sơn', 'Phường Thắng Lợi', 'Phường Yên Đỗ'] },
-      { name: 'Thị xã An Khê', wards: ['Phường An Bình', 'Phường An Phú', 'Phường An Tân', 'Phường Ngô Mây', 'Phường Tây Sơn', 'Xã Cửu An', 'Xã Song An', 'Xã Thành An'] },
-      { name: 'Huyện Đăk Đoa', wards: ['Xã Glar', 'Xã Hà Bầu', 'Xã Hà Đông', 'Xã Hải Yang', 'Xã Ia Băng', 'Xã Kdang', 'Xã Nam Yang', 'Xã Trang', 'Thị trấn Đăk Đoa'] },
-    ],
-  },
-  {
-    name: 'Đắk Lắk',
-    districts: [
-      { name: 'TP. Buôn Ma Thuột', wards: ['Phường Ea Tam', 'Phường Khánh Xuân', 'Phường Tân An', 'Phường Tân Hòa', 'Phường Tân Lập', 'Phường Tân Lợi', 'Phường Tân Thành', 'Phường Thắng Lợi', 'Phường Thành Nhất'] },
-    ],
-  },
-  {
-    name: 'Bình Dương',
-    districts: [
-      { name: 'TP. Thủ Dầu Một', wards: ['Phường Chánh Mỹ', 'Phường Chánh Nghĩa', 'Phường Định Hòa', 'Phường Hiệp An', 'Phường Hiệp Thành', 'Phường Phú Cường', 'Phường Phú Hòa', 'Phường Phú Lợi'] },
-      { name: 'TP. Dĩ An', wards: ['Phường An Bình', 'Phường Bình An', 'Phường Bình Thắng', 'Phường Dĩ An', 'Phường Đông Hòa', 'Phường Tân Bình', 'Phường Tân Đông Hiệp'] },
-      { name: 'TP. Thuận An', wards: ['Phường An Phú', 'Phường An Sơn', 'Phường Bình Chuẩn', 'Phường Bình Hòa', 'Phường Hưng Định', 'Phường Lái Thiêu', 'Phường Thuận Giao', 'Phường Vĩnh Phú'] },
-    ],
-  },
-  {
-    name: 'Cần Thơ',
-    districts: [
-      { name: 'Quận Ninh Kiều', wards: ['Phường An Bình', 'Phường An Hòa', 'Phường An Khánh', 'Phường An Nghiệp', 'Phường Cái Khế', 'Phường Hưng Lợi', 'Phường Tân An', 'Phường Xuân Khánh'] },
-      { name: 'Quận Bình Thủy', wards: ['Phường An Thới', 'Phường Bình Thủy', 'Phường Bùi Hữu Nghĩa', 'Phường Long Hòa', 'Phường Long Tuyền', 'Phường Trà An'] },
-    ],
-  },
-];
+// ✅ Chỉ còn 2 cấp: Tỉnh/Thành phố -> Phường/Xã (bỏ Quận/Huyện)
+const vietnamData = vietnamProvincesWards as Province[];
 
 // SĐT Việt Nam: bắt đầu bằng 0, đủ 10 số
 const PHONE_REGEX = /^0[0-9]{9}$/;
@@ -127,7 +59,6 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [selectedCity, setSelectedCity] = useState('');
-  const [selectedDistrict, setSelectedDistrict] = useState('');
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [addressForm] = Form.useForm();
@@ -210,24 +141,25 @@ export default function ProfilePage() {
     return false;
   };
 
+  // ✅ Địa chỉ cũ lưu theo "street, ward, city" (3 phần) — bỏ phần district
   const openAddressModal = () => {
     const parts = (profile?.address || '').split(', ').map((s) => s.trim());
-    const city = parts.length > 3 ? parts[3] : '';
-    const district = parts.length > 3 ? parts[2] : '';
-    setSelectedCity(city); setSelectedDistrict(district);
+    const city = parts.length > 2 ? parts[2] : '';
+    setSelectedCity(city);
     addressForm.setFieldsValue({
       receiverName: profile?.name || '', receiverPhone: profile?.phone || '',
-      street: parts[0] || '', ward: parts.length > 3 ? parts[1] : '',
-      district, city,
+      street: parts[0] || '', ward: parts.length > 2 ? parts[1] : '',
+      city,
     });
     setAddressModalOpen(true);
   };
 
   const saveAddress = async (values: {
     receiverName?: string; receiverPhone?: string;
-    street: string; ward: string; district: string; city: string;
+    street: string; ward: string; city: string;
   }) => {
-    const fullAddress = [values.street, values.ward, values.district, values.city].filter(Boolean).join(', ');
+    // ✅ Địa chỉ đầy đủ giờ chỉ còn: số nhà/đường, phường/xã, tỉnh/thành phố
+    const fullAddress = [values.street, values.ward, values.city].filter(Boolean).join(', ');
     setSaving(true);
     try {
       await axiosClient.put(`/users/${user?.id}`, {
@@ -504,36 +436,53 @@ export default function ProfilePage() {
             </Form.Item>
           </div>
 
-          {/* Tỉnh/TP + Quận/Huyện ở 1 dòng; Phường/Xã xuống dòng riêng để không bị tràn ra ngoài modal,
-              vì tên Phường/Xã thường dài hơn (ví dụ "Phường Hiệp Bình Chánh") */}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <Form.Item name="city" label={<span style={{ fontSize: 13, color: '#888' }}>Tỉnh/TP</span>} style={{ flex: 1 }} rules={[{ required: true, message: 'Chọn tỉnh/TP' }]}>
-              <Select placeholder="Chọn Tỉnh/TP" size="large" showSearch optionFilterProp="children"
-                onChange={(value: string) => { setSelectedCity(value); setSelectedDistrict(''); addressForm.setFieldsValue({ district: undefined, ward: undefined }); }}>
-                {vietnamData.map((p) => <Select.Option key={p.name} value={p.name}>{p.name}</Select.Option>)}
-              </Select>
-            </Form.Item>
-            <Form.Item name="district" label={<span style={{ fontSize: 13, color: '#888' }}>Quận/Huyện</span>} style={{ flex: 1 }} rules={[{ required: true, message: 'Chọn quận/huyện' }]}>
-              <Select placeholder="Chọn Quận/Huyện" size="large" showSearch optionFilterProp="children"
-                onChange={(value: string) => { setSelectedDistrict(value); addressForm.setFieldsValue({ ward: undefined }); }}>
-                {(vietnamData.find((p) => p.name === selectedCity)?.districts || []).map((d) => <Select.Option key={d.name} value={d.name}>{d.name}</Select.Option>)}
-              </Select>
-            </Form.Item>
-          </div>
+          {/* ✅ Chỉ còn Tỉnh/Thành phố — không còn Quận/Huyện.
+              Phường/Xã đặt xuống dòng riêng full-width vì tên phường/xã thường dài
+              (ví dụ "Phường Hiệp Bình Chánh"), tránh tràn ra ngoài modal. */}
+          <Form.Item
+            name="city"
+            label={<span style={{ fontSize: 13, color: '#888' }}>Tỉnh/Thành phố</span>}
+            rules={[{ required: true, message: 'Chọn tỉnh/thành phố' }]}
+          >
+            <Select
+              placeholder="Chọn Tỉnh/Thành phố"
+              size="large"
+              showSearch
+              optionFilterProp="children"
+              onChange={(value: string) => {
+                setSelectedCity(value);
+                addressForm.setFieldsValue({ ward: undefined });
+              }}
+            >
+              {vietnamData.map((p) => <Select.Option key={p.name} value={p.name}>{p.name}</Select.Option>)}
+            </Select>
+          </Form.Item>
 
-          <Form.Item name="ward" label={<span style={{ fontSize: 13, color: '#888' }}>Phường/Xã</span>} rules={[{ required: true, message: 'Chọn phường/xã' }]}>
-            <Select placeholder="Chọn Phường/Xã" size="large" showSearch optionFilterProp="children">
-              {(vietnamData.find((p) => p.name === selectedCity)?.districts.find((d) => d.name === selectedDistrict)?.wards || []).map((w) => <Select.Option key={w} value={w}>{w}</Select.Option>)}
+          <Form.Item
+            name="ward"
+            label={<span style={{ fontSize: 13, color: '#888' }}>Phường/Xã</span>}
+            rules={[{ required: true, message: 'Chọn phường/xã' }]}
+          >
+            <Select
+              placeholder="Chọn Phường/Xã"
+              size="large"
+              showSearch
+              optionFilterProp="children"
+              disabled={!selectedCity}
+            >
+              {(vietnamData.find((p) => p.name === selectedCity)?.wards || []).map((w) => (
+                <Select.Option key={w} value={w}>{w}</Select.Option>
+              ))}
             </Select>
           </Form.Item>
 
           <Form.Item name="street" label={<span style={{ fontSize: 13, color: '#888' }}>Địa chỉ cụ thể</span>} rules={[{ required: true, message: 'Vui lòng nhập địa chỉ cụ thể!' }]}>
             <Input.TextArea rows={2} placeholder="Số nhà, tên đường, tòa nhà..." style={{ borderRadius: 8, resize: 'none' }} />
           </Form.Item>
-          <Form.Item noStyle dependencies={['street', 'ward', 'district', 'city']}>
+          <Form.Item noStyle dependencies={['street', 'ward', 'city']}>
             {({ getFieldsValue }) => {
               const vals = getFieldsValue();
-              const addr = [vals.street, vals.ward, vals.district, vals.city].filter(Boolean).join(', ');
+              const addr = [vals.street, vals.ward, vals.city].filter(Boolean).join(', ');
               return (
                 <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 16, border: '1px solid #e8e8e8' }}>
                   <iframe src={`https://www.google.com/maps?q=${encodeURIComponent(addr || 'Vietnam')}&output=embed`}
