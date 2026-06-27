@@ -28,7 +28,7 @@ import '../styles/CartPage.css';
 const { Title, Text } = Typography;
 
 const FREE_SHIP_THRESHOLD = 200000;
-const SHIPPING_FEE = 25000;
+const SHIPPING_FEE = 20000;
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, clearCart } = useCart();
